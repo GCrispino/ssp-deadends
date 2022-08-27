@@ -6,26 +6,6 @@ quit_state = State(frozenset({Literal(Predicate("has-quit", 0, []), [])}),
 quit_action = Literal(Predicate("quit", 0, []), [])
 
 
-def get_all_reachable(s, A, env, reach=None):
-    reach = {} if not reach else reach
-
-    reach[s] = {}
-    for a in A:
-        try:
-            succ = get_successor_states(s,
-                                        a,
-                                        env.domain,
-                                        raise_error_on_invalid_action=True,
-                                        return_probs=True)
-        except InvalidAction:
-            succ = {s: 1.0}
-        reach[s][a] = {s_: prob for s_, prob in succ.items()}
-        for s_ in succ:
-            if s_ not in reach:
-                reach.update(get_all_reachable(s_, A, env, reach))
-    return reach
-
-
 def traverse_all_reachable(s, A, env, fn):
     return _traverse_all_reachable(s, A, env, fn)
 
