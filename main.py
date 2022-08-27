@@ -1,97 +1,30 @@
-import argparse
+import math
 import os
 import sys
+
 import gym
 import imageio
-import pddlgym
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from datetime import datetime
-from pddlgym.inference import check_goal
-from mdp import get_all_reachable, vi
+import numpy as np
+import pddlgym
+import pulp
 
-matplotlib.use('agg')
+import sspde.argparsing as argparsing
+import sspde.mdp.gubs as gubs
+import sspde.pddl as pddl
+import sspde.rendering as rendering
+
+from datetime import datetime
+
+from sspde.mdp.general import build_mdp_graph, create_cost_fn, create_pi_func
+from sspde.mdp.vi import vi
+from sspde.mdp.mcmp import get_in_flow, get_out_flow, maxprob_lp, mcmp
+
+#matplotlib.use('agg')
 
 sys.setrecursionlimit(5000)
-
-DEFAULT_PROB_INDEX = 0
-DEFAULT_EPSILON = 0.1
-DEFAULT_GAMMA = 0.99
-DEFAULT_SIMULATE = False
-DEFAULT_RENDER_AND_SAVE = False
-DEFAULT_PRINT_SIM_HISTORY = False
-DEFAULT_PLOT_STATS = False
-DEFAULT_OUTPUT_DIR = "./output"
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Value Iteration algorithm for PDDLGym environments.')
-
-    parser.add_argument('--env',
-                        dest='env',
-                        required=True,
-                        help="PDDLGym environment to solve")
-    parser.add_argument(
-        '--problem_index',
-        type=int,
-        default=DEFAULT_PROB_INDEX,
-        dest='problem_index',
-        help="Chosen environment's problem index to solve (default: %s)" %
-        str(DEFAULT_PROB_INDEX))
-    parser.add_argument('--epsilon',
-                        dest='epsilon',
-                        type=float,
-                        default=DEFAULT_EPSILON,
-                        help="Epsilon used for convergence (default: %s)" %
-                        str(DEFAULT_EPSILON))
-    parser.add_argument('--gamma',
-                        dest='gamma',
-                        type=float,
-                        default=DEFAULT_GAMMA,
-                        help="Discount factor (default: %s)" %
-                        str(DEFAULT_GAMMA))
-    parser.add_argument(
-        '--simulate',
-        dest='simulate',
-        default=DEFAULT_SIMULATE,
-        action="store_true",
-        help=
-        "Defines whether or not to run a simulation in the problem by applying the algorithm's resulting policy (default: %s)"
-        % DEFAULT_SIMULATE)
-    parser.add_argument(
-        '--render_and_save',
-        dest='render_and_save',
-        default=DEFAULT_RENDER_AND_SAVE,
-        action="store_true",
-        help=
-        "Defines whether or not to render and save the received observations during execution to a file (default: %s)"
-        % DEFAULT_RENDER_AND_SAVE)
-    parser.add_argument('--output_dir',
-                        dest='output_dir',
-                        default=DEFAULT_OUTPUT_DIR,
-                        help="Simulation's output directory (default: %s)" %
-                        DEFAULT_OUTPUT_DIR)
-    parser.add_argument(
-        '--print_sim_history',
-        dest='print_sim_history',
-        action="store_true",
-        default=DEFAULT_PRINT_SIM_HISTORY,
-        help=
-        "Defines whether or not to print chosen actions during simulation (default: %s)"
-        % DEFAULT_PRINT_SIM_HISTORY)
-
-    parser.add_argument(
-        '--plot_stats',
-        dest='plot_stats',
-        action="store_true",
-        default=DEFAULT_PLOT_STATS,
-        help=
-        "Defines whether or not to run a series of episodes with both a random policy and the policy returned by the algorithm and plot stats about these runs (default: %s)"
-        % DEFAULT_PLOT_STATS)
-
-    return parser.parse_args()
+np.random.seed(42)
 
 
 def run_episode(pi,
@@ -106,8 +39,7 @@ def run_episode(pi,
     if render_and_save:
         output_outdir = args.output_dir
         domain_name = env.domain.domain_name
-        problem_name = domain_name + str(
-            env._problem_idx) if env._problem_index_fixed else None
+        problem_name = domain_name + str(problem_index)
         output_dir = os.path.join(output_outdir, domain_name, problem_name,
                                   f"{str(datetime.now().timestamp())}")
         if not os.path.isdir(output_dir):
@@ -115,7 +47,7 @@ def run_episode(pi,
 
     if render_and_save:
         img = env.render()
-        imageio.imsave(os.path.join(output_dir, f"frame1.png"), img)
+        imageio.imsave(os.path.join(output_dir, "frame1.png"), img)
 
     cum_reward = 0
     for i in range(1, n_steps + 1):
@@ -134,7 +66,7 @@ def run_episode(pi,
     return i, cum_reward
 
 
-args = parse_args()
+args = argparsing.parse_args()
 
 env = gym.make(args.env)
 problem_index = args.problem_index
@@ -147,23 +79,150 @@ obs, _ = env.reset()
 A = list(sorted(env.action_space.all_ground_literals(obs, valid_only=False)))
 
 print(' calculating list of states...')
-reach = get_all_reachable(obs, A, env)
-S = list(sorted([s for s in reach]))
+has_penalty = args.vi_mode == "penalty"
+mdp_graph = build_mdp_graph(obs, A, env, problem_index, penalty=has_penalty)
+S = list(sorted([s for s in mdp_graph]))
 print('Number of states:', len(S))
 
-print('done')
-V_i = {s: i for i, s in enumerate(S)}
-G_i = [V_i[s] for s in V_i if check_goal(s, goal)]
+if args.vi_mode == "discounted":
+    param = "gamma"
+elif args.vi_mode == "penalty":
+    param = "penalty"
+param_vals = [getattr(args, param)]
 
-print('obtaining optimal policy')
-succ_states = {s: {} for s in reach}
-for s in reach:
-    for a in A:
-        succ_states[s, a] = reach[s][a]
-V, pi = vi(S, succ_states, A, V_i, G_i, goal, env, args.gamma, args.epsilon)
-pi_func = lambda s: pi[V_i[s]]
+succ_states = {s: {} for s in mdp_graph}
+for s in mdp_graph:
+    if mdp_graph[s]['goal']:
+        continue
+    A_set = A
+    if args.vi_mode == "penalty":
+        A_set = A_set + [pddl.quit_action]
+    for a in A_set:
+        succ_states[s, a] = mdp_graph[s]['actions'][a]
+
+if args.algorithm == "vi":
+
+    V_i = {s: i for i, s in enumerate(S)}
+    G_i = [V_i[s] for s in V_i if mdp_graph[s]['goal']]
+
+    print('obtaining optimal policy')
+
+    n_vals = 20
+    if args.batch:
+        init_val = args.init_param_val
+        n_vals = args.batch_size
+        if args.vi_mode == "discounted":
+            param_vals = np.linspace(init_val, args.gamma, n_vals)
+        elif args.vi_mode == "penalty":
+            param_vals = np.linspace(init_val, args.penalty, n_vals)
+
+    kwargs_default = {
+        "mode": args.vi_mode,
+        "gamma": args.gamma,
+        "penalty": args.penalty,
+    }
+    if args.batch:
+        kwargs_list = [{
+            **kwargs_default,
+            **{
+                param: val
+            }
+        } for val in param_vals]
+    else:
+        kwargs_list = [kwargs_default]
+    print(kwargs_list)
+    reses = []
+    for kwargs in kwargs_list:
+        print(f"running for param val {param}={kwargs[param]}:")
+        V, pi, P = vi(S, succ_states, A, V_i, G_i, goal, env, args.epsilon,
+                      mdp_graph, **kwargs)
+
+        pi_func = create_pi_func(pi, V_i)
+
+        reses.append((V, pi_func, P))
+        print("Value at initial state:", V[V_i[obs]])
+        print("Probability to goal at initial state:", P[V_i[obs]])
+        print("Best action at initial state:", pi[V_i[obs]])
+
+elif args.algorithm == "mcmp":
+
+    # Initialize variables
+    variables = []
+    variable_map = {}
+    for i, s in enumerate(S):
+        for a in A:
+            s_id_ = rendering.get_state_id(env, s)
+            s_id = s_id_ if s_id_ != "" else i
+            var = pulp.LpVariable(name=f"x_({s_id}-{a})", lowBound=0)
+            variables.append(var)
+            variable_map[(s, a)] = var
+    in_flow = get_in_flow(variable_map, mdp_graph)
+    out_flow = get_out_flow(variable_map, mdp_graph)
+
+    S_i = {s: i for i, s in enumerate(S)}
+    p_max, model_prob = maxprob_lp(obs, S_i, in_flow, out_flow, env, mdp_graph)
+    mcmp_cost_fn = create_cost_fn(mdp_graph, False)
+    mincost, model_cost = mcmp(obs, S_i, variable_map, in_flow, out_flow,
+                               p_max, mcmp_cost_fn, env, mdp_graph)
+
+    print("Value at initial state:", mincost)
+    print("Probability to goal at initial state:", p_max)
+
+    print("s0:", rendering.get_state_id(env, obs))
+
+    def pi_func(s):
+        best = None
+        max_val = -math.inf
+        for a in A:
+            if (val_a := variable_map[s, a].value()) > max_val:
+                max_val = val_a
+                best = a
+
+        return best
+
+
+lamb = -0.1
+k_g = 1
+
+
+def u(c):
+    return np.exp(c * lamb)
+
+
+vals = []
+stds = []
+reses_pi = [pi_func for (_, pi_func, P) in reses]
+
+for i, (V, pi_func, P) in enumerate(reses):
+    param_cost_fn = create_cost_fn(mdp_graph, has_penalty, param_vals[i])
+    v = gubs.eval_policy(obs,
+                         succ_states,
+                         pi_func,
+                         param_cost_fn,
+                         P,
+                         lamb,
+                         k_g,
+                         args.epsilon,
+                         mdp_graph,
+                         env,
+                         V_i=V_i)
+    vals.append(v)
+    print(
+        f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {param_vals[i]}:",
+        v)
+    print()
+
+means = np.array(vals)
+stds = np.array(stds)
+
+plt.plot(param_vals, means)
+if len(stds) > 0:
+    plt.fill_between(param_vals, means - stds, means + stds, alpha=0.5)
+plt.show()
 
 n_episodes = 1000
+
+print("Optimal action at initial state:", pi_func(obs))
 
 plot = False
 if args.plot_stats:
