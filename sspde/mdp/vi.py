@@ -1,7 +1,10 @@
+import time
+
 import numpy as np
 
 import sspde.pddl as pddl
 import sspde.rendering as rendering
+
 
 def vi(S,
        succ_states,
@@ -14,7 +17,9 @@ def vi(S,
        mdp_graph,
        mode='discounted',
        gamma=0.99,
-       penalty=None):
+       penalty=None,
+       start=None,
+       time_limit=None):
 
     V = np.zeros(len(V_i))
     P = np.zeros(len(V_i))
@@ -25,8 +30,15 @@ def vi(S,
 
     i = 0
     diff = np.inf
+    diff_p = np.inf
     while True:
-        print('Iteration', i, diff)
+        if time_limit is not None:
+            if start is None:
+                raise ValueError(start)
+
+            if time.perf_counter() - start > time_limit:
+                return V, pi, P, True
+        print('Iteration', i, diff + diff_p)
         V_ = np.copy(V)
         P_ = np.copy(P)
 
@@ -68,8 +80,24 @@ def vi(S,
 
         diff = np.linalg.norm(V_ - V, np.inf)
         diff_p = np.linalg.norm(P_ - P, np.inf)
+
         #if diff < epsilon:
         if diff + diff_p < epsilon:
             break
         i += 1
-    return V, pi, P
+    return V, pi, P, False
+
+
+def get_succ_states(vi_mode, A, mdp_graph):
+    succ_states = {s: {} for s in mdp_graph}
+    for s in mdp_graph:
+        A_set = A
+        if vi_mode == "penalty":
+            A_set = A_set + [pddl.quit_action]
+        for a in A_set:
+            if mdp_graph[s]['goal']:
+                succ_states[s, a] = {s: 1}
+            else:
+                succ_states[s, a] = mdp_graph[s]['actions'][a]
+
+    return succ_states
