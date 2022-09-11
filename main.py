@@ -211,15 +211,15 @@ def u(c):
 
 vals = []
 stds = []
-reses_pi = [pi_func for (_, pi_func, P) in reses]
+reses_pi = [pi_func for (_, pi_func, p_max) in reses]
 
-for i, (V, pi_func, P) in enumerate(reses):
+for i, (V, pi_func, p_max) in enumerate(reses):
     param_cost_fn = create_cost_fn(mdp_graph, has_penalty, param_vals[i])
     v = gubs.eval_policy(obs,
                          succ_states,
                          pi_func,
                          param_cost_fn,
-                         P,
+                         p_max,
                          lamb,
                          k_g,
                          args.epsilon,
