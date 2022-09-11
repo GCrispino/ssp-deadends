@@ -19,7 +19,7 @@ import sspde.rendering as rendering
 from datetime import datetime
 
 from sspde.mdp.general import build_mdp_graph, create_cost_fn, create_pi_func
-from sspde.mdp.vi import vi
+from sspde.mdp.vi import get_succ_states, vi
 
 #matplotlib.use('agg')
 
@@ -90,15 +90,7 @@ elif args.vi_mode == "penalty":
     param = "penalty"
 param_vals = [getattr(args, param)]
 
-succ_states = {s: {} for s in mdp_graph}
-for s in mdp_graph:
-    if mdp_graph[s]['goal']:
-        continue
-    A_set = A
-    if args.vi_mode == "penalty":
-        A_set = A_set + [pddl.quit_action]
-    for a in A_set:
-        succ_states[s, a] = mdp_graph[s]['actions'][a]
+succ_states = get_succ_states(args.vi_mode, A, mdp_graph)
 
 if args.algorithm == "vi":
 
