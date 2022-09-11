@@ -12,6 +12,7 @@ import pulp
 
 import sspde.argparsing as argparsing
 import sspde.mdp.gubs as gubs
+import sspde.mdp.mcmp as mcmp
 import sspde.pddl as pddl
 import sspde.rendering as rendering
 
@@ -19,7 +20,6 @@ from datetime import datetime
 
 from sspde.mdp.general import build_mdp_graph, create_cost_fn, create_pi_func
 from sspde.mdp.vi import vi
-from sspde.mdp.mcmp import get_in_flow, get_out_flow, maxprob_lp, mcmp
 
 #matplotlib.use('agg')
 
@@ -156,19 +156,47 @@ elif args.algorithm == "mcmp":
             var = pulp.LpVariable(name=f"x_({s_id}-{a})", lowBound=0)
             variables.append(var)
             variable_map[(s, a)] = var
-    in_flow = get_in_flow(variable_map, mdp_graph)
-    out_flow = get_out_flow(variable_map, mdp_graph)
+    in_flow = mcmp.get_in_flow(variable_map, mdp_graph)
+    out_flow = mcmp.get_out_flow(variable_map, mdp_graph)
 
     S_i = {s: i for i, s in enumerate(S)}
-    p_max, model_prob = maxprob_lp(obs, S_i, in_flow, out_flow, env, mdp_graph)
+    p_max, model_prob = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
+                                        mdp_graph)
+    #p_max *= 0.9
     mcmp_cost_fn = create_cost_fn(mdp_graph, False)
-    mincost, model_cost = mcmp(obs, S_i, variable_map, in_flow, out_flow,
+    mincost, model_cost = mcmp.mcmp(obs, S_i, variable_map, in_flow, out_flow,
                                p_max, mcmp_cost_fn, env, mdp_graph)
 
-    print("Value at initial state:", mincost)
-    print("Probability to goal at initial state:", p_max)
+    # p_vals = np.linspace(args.init_param_val, p_max, args.batch_size)
+    # reses = []
+    # for p in p_vals:
+    #     print(f"running for param val p_max={p}:")
+    #     mincost, model_cost = mcmp.mcmp(obs,
+    #                                     S_i,
+    #                                     variable_map,
+    #                                     in_flow,
+    #                                     out_flow,
+    #                                     p,
+    #                                     mcmp_cost_fn,
+    #                                     env,
+    #                                     mdp_graph,
+    #                                     log_solver=False)
+
+    #     pi_func = mcmp.create_pi_func(variable_map, A)
+
+    #     mcmp.print_model_status(model_cost)
+    #     reses.append((mincost, pi_func, p))
+    #     print("Value at initial state:", mincost)
+    #     print("Probability to goal at initial state:", p)
+    #     print("Best action at initial state:", pi_func(obs))
+    #     print()
+    #print("Value at initial state:", mincost)
+    #print("Probability to goal at initial state:", p_max)
 
     print("s0:", rendering.get_state_id(env, obs))
+
+    #print("s0:", obs)
+
 
     def pi_func(s):
         best = None
