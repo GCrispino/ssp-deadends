@@ -181,8 +181,8 @@ elif args.algorithm == "mcmp":
         return best
 
 
-lamb = -0.1
-k_g = 1
+lamb = args.lamb
+k_g = args.k_g
 
 
 def u(c):

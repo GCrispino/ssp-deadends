@@ -9,6 +9,8 @@ DEFAULT_INIT_PARAM_VALUE = 0.01
 DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
 DEFAULT_BATCH_SIZE = 20
+DEFAULT_LAMBDA = -0.1
+DEFAULT_KG = 1
 DEFAULT_SIMULATE = False
 DEFAULT_RENDER_AND_SAVE = False
 DEFAULT_PRINT_SIM_HISTORY = False
@@ -76,6 +78,17 @@ def parse_args():
         help=
         "Size of batch in batch mode (default: %s)"
         % DEFAULT_BATCH_SIZE)
+    parser.add_argument('--lambda',
+                        dest='lamb',
+                        type=float,
+                        default=DEFAULT_LAMBDA,
+                        help="Risk factor (default: %s)" % str(DEFAULT_LAMBDA))
+    parser.add_argument('--k_g',
+                        dest='k_g',
+                        type=float,
+                        default=DEFAULT_KG,
+                        help="Constant goal utility (default: %s)" %
+                        str(DEFAULT_LAMBDA))
     parser.add_argument(
         '--init_param_val',
         dest='init_param_val',
