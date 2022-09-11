@@ -1,7 +1,10 @@
+import math
+
 import pulp
 
 import sspde.rendering as rendering
 from sspde.mdp.general import get_succs, Pr
+
 
 def get_in_flow(variable_map, mdp):
     ins = {}
@@ -45,7 +48,8 @@ def get_out_flow(variable_map, mdp):
         outs[s] = pulp.lpSum(out)
     return outs
 
-def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp):
+
+def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp, log_solver=False):
     # Create the model
     model_cost = pulp.LpProblem(name="mcmp", sense=pulp.LpMinimize)
 
@@ -100,11 +104,12 @@ def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp):
     model_cost += obj_func
 
     # Solve the problem
-    model_cost.solve()
+    model_cost.solve(pulp.PULP_CBC_CMD(msg=log_solver))
 
     return model_cost.objective.value(), model_cost
 
     #print_model_status(model_cost)
+
 
 def maxprob_lp(s_0, S_i, in_flow, out_flow, env, mdp):
     # Create the model
@@ -141,3 +146,31 @@ def maxprob_lp(s_0, S_i, in_flow, out_flow, env, mdp):
     model_prob.solve()
 
     return model_prob.objective.value(), model_prob
+
+
+def create_pi_func(variable_map, A):
+
+    def pi_func(s):
+        best = None
+        max_val = -math.inf
+        for a in A:
+            if (val_a := variable_map[s, a].value()) > max_val:
+                max_val = val_a
+                best = a
+
+        return best
+
+    return pi_func
+
+def print_model_status(model):
+    print(model)
+
+    print(f"status: {model.status}, {pulp.LpStatus[model.status]}")
+
+    print(f"objective: {model.objective.value()}")
+
+    for var in model.variables():
+        print(f"{var.name}: {var.value()}")
+
+    for name, constraint in model.constraints.items():
+        print(f"{name}: {constraint.value()}")
