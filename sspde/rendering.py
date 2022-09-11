@@ -179,6 +179,7 @@ get_state_id_env_functions = {
     #    "PDDLEnvExplodingblocksTest-v0": expblocks_get_state_id,
     "PDDLEnvRiver-alt-v0": river_alt_get_state_id,
     "PDDLEnvTest_domain-v0": test_domain_get_state_id,
+    "PDDLEnvTest_domain2-v0": test_domain_get_state_id,
     #    **{k: navigation_get_state_id
     #       for k in navigation_keys}
 }
