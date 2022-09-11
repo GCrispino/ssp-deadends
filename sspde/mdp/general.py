@@ -44,6 +44,21 @@ def build_mdp_graph(s, A, env, problem_index, penalty=False):
     return mdp
 
 
+def to_no_penalty_mdp_graph(mdp_graph):
+    return {
+        s: {
+            **v,
+            **{
+                'actions': {
+                    a: outcomes
+                    for a, outcomes in v['actions'].items() if a != pddl.quit_action
+                }
+            }
+        }
+        for s, v in mdp_graph.items() if s != pddl.quit_state
+    }
+
+
 def Pr(s, a, s_, mdp):
     s_mdp = mdp[s]
     if a not in s_mdp['actions']:
