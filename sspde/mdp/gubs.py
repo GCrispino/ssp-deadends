@@ -18,14 +18,16 @@ def eval_policy(s0,
                 k_g,
                 epsilon,
                 mdp_graph,
+                A,
                 env,
-                V_i=None):
+                V_i=None,
+                prob_policy=False):
     if V_i is None:
         S = list(sorted([s for s in mdp_graph]))
         V_i = {s: i for i, s in enumerate(S)}
 
-    V_rs, _ = rs_lexicographic_eval(succ_states, V_i, pi, cost_fn, lamb,
-                                    epsilon, mdp_graph, env)
+    V_rs, _ = rs_lexicographic_eval(succ_states, V_i, A, pi, cost_fn, lamb,
+                                    epsilon, mdp_graph, env, prob_policy=prob_policy)
 
     print("Value of rs lexicographic policy", V_rs[V_i[s0]])
     print("Prob to goal of rs lexicographic policy", p_max)

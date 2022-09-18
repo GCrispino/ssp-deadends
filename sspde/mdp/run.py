@@ -1,5 +1,6 @@
 import math
 import time
+from copy import deepcopy
 
 import numpy as np
 import pulp
@@ -7,13 +8,23 @@ import pulp
 import sspde.mdp.general as general
 import sspde.mdp.gubs as gubs
 import sspde.mdp.mcmp as mcmp
-import sspde.mdp.run as run
 import sspde.mdp.vi as vi
 import sspde.rendering as rendering
 
 
-def eval_gubs(env, obs, succ_states, V_i, mode, lamb, k_g, epsilon, param_vals,
-              reses, mdp_graph):
+def eval_gubs(env,
+              obs,
+              succ_states,
+              V_i,
+              A,
+              mode,
+              lamb,
+              k_g,
+              epsilon,
+              param_vals,
+              reses,
+              mdp_graph,
+              prob_policy=False):
     vals = []
 
     for i, (V, pi_func, p_max) in enumerate(reses):
@@ -28,8 +39,10 @@ def eval_gubs(env, obs, succ_states, V_i, mode, lamb, k_g, epsilon, param_vals,
                              k_g,
                              epsilon,
                              mdp_graph,
+                             A,
                              env,
-                             V_i=V_i)
+                             V_i=V_i,
+                             prob_policy=prob_policy)
         vals.append(v)
         print(
             f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {param_vals[i]}:",
@@ -90,14 +103,22 @@ def run_vi_and_eval_gubs(env,
         print(f"  elapsed: {elapsed}, time limit: {time_limit}")
         if elapsed > time_limit:
             print(
-                f"  elapsed time of {elapsed} exceeded limit of {time_limit}"
-            )
+                f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
             break
         print(f"running for param val {param}={kwargs[param]}:")
-        #input()
-        # TODO -> pass time limit vi.vi too, to avoid VI executions that take too long
-        V, pi, P, timed_out = vi.vi(S, succ_states, A, V_i, G_i, goal, env, epsilon,
-                         mdp_graph, start=start, time_limit=time_limit, **kwargs)
+
+        V, pi, P, timed_out = vi.vi(S,
+                                    succ_states,
+                                    A,
+                                    V_i,
+                                    G_i,
+                                    goal,
+                                    env,
+                                    epsilon,
+                                    mdp_graph,
+                                    start=start,
+                                    time_limit=time_limit,
+                                    **kwargs)
 
         if timed_out:
             print(
@@ -113,14 +134,28 @@ def run_vi_and_eval_gubs(env,
         print("Best action at initial state:", pi[V_i[obs]])
         print()
 
-    vals = run.eval_gubs(env, obs, succ_states, V_i, mode, lamb, k_g, epsilon,
-                         param_vals, reses, mdp_graph)
+    vals = eval_gubs(env, obs, succ_states, V_i, A, mode, lamb, k_g, epsilon,
+                     param_vals, reses, mdp_graph)
 
     return vals, param_vals
 
 
-def run_mcmp_and_eval_gubs(env, obs, S, A, V_i, succ_states, lamb, k_g,
-                           epsilon, mdp_graph):
+def run_mcmp_and_eval_gubs(env,
+                           obs,
+                           init_pval,
+                           S,
+                           A,
+                           V_i,
+                           succ_states,
+                           lamb,
+                           k_g,
+                           epsilon,
+                           mdp_graph,
+                           time_limit,
+                           batch_size=5):
+
+    start = time.perf_counter()
+
     # Initialize variables
     variables = []
     variable_map = {}
@@ -137,48 +172,67 @@ def run_mcmp_and_eval_gubs(env, obs, S, A, V_i, succ_states, lamb, k_g,
     S_i = {s: i for i, s in enumerate(S)}
     p_max, model_prob = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
                                         mdp_graph)
-    #p_max *= 0.9
+
+    # TODO -> put time check here and early return if time is up
+
+    n_vals = batch_size
+    ps = np.linspace(init_pval, p_max, n_vals)
+
     mcmp_cost_fn = general.create_cost_fn(mdp_graph, False)
-    # mincost, model_cost = mcmp.mcmp(obs, S_i, variable_map, in_flow, out_flow,
-    #                            p_max, mcmp_cost_fn, env, mdp_graph)
 
-    print(f"running for param val p_max={p_max}:")
-    mincost, model_cost = mcmp.mcmp(obs,
-                                    S_i,
-                                    variable_map,
-                                    in_flow,
-                                    out_flow,
-                                    p_max,
-                                    mcmp_cost_fn,
-                                    env,
-                                    mdp_graph,
-                                    log_solver=False)
+    last_mcmp_cost = None
+    reses = []
+    for p in ps:
+        elapsed = time.perf_counter() - start
+        print(f"  elapsed: {elapsed}, time limit: {time_limit}")
+        if elapsed > time_limit:
+            print(
+                f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
+            break
 
-    pi_func = mcmp.create_pi_func(variable_map, A)
+        print(f"running for param val p_max={p_max}:")
+        mincost, model_cost, timed_out = mcmp.mcmp(obs,
+                                                   S_i,
+                                                   variable_map,
+                                                   in_flow,
+                                                   out_flow,
+                                                   p,
+                                                   mcmp_cost_fn,
+                                                   env,
+                                                   mdp_graph,
+                                                   start=start,
+                                                   log_solver=False)
 
-    #mcmp.print_model_status(model_cost)
-    print("Value at initial state:", mincost)
-    print("Probability to goal at initial state:", p_max)
-    print("Best action at initial state:", pi_func(obs))
-    print()
-    #print("Value at initial state:", mincost)
-    #print("Probability to goal at initial state:", p_max)
+        last_mcmp_cost = mincost
+        var_map = deepcopy(variable_map)
+        pi_func = mcmp.create_pi_func_prob(var_map, obs, A, p)
 
-    #print("s0:", rendering.get_state_id(env, obs))
+        if timed_out:
+            print(
+                f"  elapsed time of {elapsed} exceeded limit of {time_limit} during value iteration"
+            )
+            continue
 
-    #print("s0:", obs)
+        reses.append((mincost, pi_func, p))
+        print("Value at initial state:", mincost)
+        print("Probability to goal at initial state:", p)
+        print("Action probabilities initial state:",
+              {a: pi_func(obs, a)
+               for a in A})
+        print()
 
-    param_cost_fn = general.create_cost_fn(mdp_graph, False)
-    v_gubs = gubs.eval_policy(obs,
-                              succ_states,
-                              pi_func,
-                              param_cost_fn,
-                              p_max,
-                              lamb,
-                              k_g,
-                              epsilon,
-                              mdp_graph,
-                              env,
-                              V_i=V_i)
+    vals = eval_gubs(env,
+                     obs,
+                     succ_states,
+                     V_i,
+                     A,
+                     "mcmp",
+                     lamb,
+                     k_g,
+                     epsilon,
+                     ps,
+                     reses,
+                     mdp_graph,
+                     prob_policy=True)
 
-    return v_gubs, mincost, p_max
+    return vals, ps, last_mcmp_cost

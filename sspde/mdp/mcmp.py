@@ -2,6 +2,7 @@ import math
 
 import pulp
 
+import sspde.pddl as pddl
 import sspde.rendering as rendering
 from sspde.mdp.general import get_succs, Pr
 
@@ -49,7 +50,7 @@ def get_out_flow(variable_map, mdp):
     return outs
 
 
-def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp, log_solver=False):
+def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp, log_solver=False, start=None):
     # Create the model
     model_cost = pulp.LpProblem(name="mcmp", sense=pulp.LpMinimize)
 
@@ -106,7 +107,7 @@ def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp, lo
     # Solve the problem
     model_cost.solve(pulp.PULP_CBC_CMD(msg=log_solver))
 
-    return model_cost.objective.value(), model_cost
+    return model_cost.objective.value(), model_cost, False
 
     #print_model_status(model_cost)
 
@@ -161,6 +162,20 @@ def create_pi_func(variable_map, A):
         return best
 
     return pi_func
+
+def create_pi_func_prob(variable_map, s0, A, p_max):
+    det_pi = create_pi_func(variable_map, A)
+
+    def pi_func(s, a):
+        if s != s0:
+            # if s != s0, chooses det_pi(s) with probability 1 and any other action with probability 0
+            return float(det_pi(s) == a)
+
+        # if s == s0, chooses action a in s with probability given by the x_s_a LP model variable
+        return variable_map[s, a].value()
+
+    return pi_func
+
 
 def print_model_status(model):
     print(model)

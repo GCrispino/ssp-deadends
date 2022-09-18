@@ -91,10 +91,14 @@ stop = time.perf_counter()
 elapsed_gubs = stop - start
 
 # Compute MCMP
-# TODO -> get mincost from MCMP and use that as heuristic somehow for choosing a max penalty val
-v_gubs_mcmp, mincost_mcmp, p_max = run.run_mcmp_and_eval_gubs(
-    env, obs, no_penalty_S, A, no_penalty_V_i, general_succ_states, lamb, k_g,
-    args.epsilon, no_penalty_mdp_graph)
+mcmp_vals, mcmp_p_vals, last_mcmp_cost = run.run_mcmp_and_eval_gubs(
+    env, obs, argparsing.DEFAULT_INIT_PARAM_VALUE, no_penalty_S, A,
+    no_penalty_V_i, general_succ_states, lamb, k_g, args.epsilon,
+    no_penalty_mdp_graph, elapsed_gubs)
+
+mcmp_vals = np.array(mcmp_vals)
+n_mcmp_vals = len(mcmp_vals)
+print("mcmp values used:", mcmp_p_vals)
 
 # TODO -> o valor do eGUBS pro primeiro valor de desconto dá 0, enquanto que rodando o main.py pro mesmo valor, retorna 0.13101062.
 #         quando não usamos as variáveis "no_penalty" aqui, o mesmo valor é retornado, o que talvez indique que o outro script esteja errado porque __talvez__ usa as variáveis de penalidade mesmo quando está no desconto
@@ -125,8 +129,11 @@ n_discounted_vals = len(discounted_vals)
 print("discount factor values used:", discounted_param_vals)
 discounted_param_vals = -np.log(1 - discounted_param_vals)
 
-max_penalty = args.penalty
-max_penalty = mincost_mcmp * 5
+if args.penalty != None:
+    max_penalty = args.penalty
+else:
+    max_penalty = last_mcmp_cost * 5
+
 penalty_succ_states = get_succ_states("penalty", A, mdp_graph)
 penalty_vals, penalty_param_vals = run.run_vi_and_eval_gubs(
     env,
@@ -153,27 +160,9 @@ n_penalty_vals = len(penalty_vals)
 print("penalty values used:", penalty_param_vals)
 penalty_param_vals = np.log(penalty_param_vals)
 
-#plt.title("penalty")
-#plt.axhline(y=v_gubs, color='r', linestyle='-', label="eGUBS optimal")
-#plt.axhline(y=v_gubs_mcmp, color='b', linestyle='-', label="MCMP")
-#print("MCMP mincost value:", mincost_mcmp)
-#plt.plot(penalty_param_vals[:n_penalty_vals], penalty_vals)
-#plt.legend()
-
-#plt.figure()
-#plt.title("discounted")
-#plt.axhline(y=v_gubs, color='r', linestyle='-', label="eGUBS optimal")
-##plt.axhline(y=v_gubs_mcmp, color='b', linestyle='-', label="MCMP")
-#plt.plot(discounted_param_vals[:n_discounted_vals], discounted_vals)
-#plt.legend()
-
 fig, ax = plt.subplots()
 ax.set_title("eGUBS criterion vs. other criteria")
 ax.axhline(y=v_gubs, color='r', linestyle='-', label="eGUBS optimal")
-plt.axhline(y=v_gubs_mcmp,
-            color='b',
-            linestyle='-',
-            label=r"MCMP $p_{max}=$" + f"{p_max}")
 ax.plot(penalty_param_vals[:n_penalty_vals],
         penalty_vals,
         label="penalty",
@@ -189,12 +178,18 @@ ax2.plot(discounted_param_vals[:n_discounted_vals],
          marker="x")
 ax2.set_xlabel(r"$-\log(1 - \gamma)$")
 
-#secax = ax.secondary_xaxis('top', functions=(forward, inverse))
-#ax.plot(inverse(discounted_param_vals)[:n_discounted_vals], discounted_vals, label="discounted inverse")
-#ax.plot(forward(discounted_param_vals)[:n_discounted_vals], discounted_vals, label="discounted forward")
-#secax.set_xlabel("discounted")
+ax3 = ax.twiny()
+ax3.spines['top'].set_position(("axes", 1.15))
+ax3.plot(mcmp_p_vals[:n_mcmp_vals],
+         mcmp_vals,
+         color="tab:orange",
+         label="MCMP",
+         marker="x")
+ax3.set_xlabel(r"$p_{max}$")
+ax3.set_ylabel(r"Policy evaluation according to eGUBS at $s_0$")
 
 fig.legend()
+plt.subplots_adjust(top=0.75)
 
 domain_name = env.domain.domain_name
 problem_name = domain_name + str(problem_index)
