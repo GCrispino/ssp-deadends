@@ -18,6 +18,30 @@ DEFAULT_PLOT_STATS = False
 DEFAULT_OUTPUT_DIR = "./output"
 
 
+# Taken from https://github.com/espnet/espnet/blob/master/espnet2/utils/types.py#L51
+def float_or_none(value):
+    """float_or_none.
+
+    Examples:
+        >>> import argparse
+        >>> parser = argparse.ArgumentParser()
+        >>> _ = parser.add_argument('--foo', type=float_or_none)
+        >>> parser.parse_args(['--foo', '4.5'])
+        Namespace(foo=4.5)
+        >>> parser.parse_args(['--foo', 'none'])
+        Namespace(foo=None)
+        >>> parser.parse_args(['--foo', 'null'])
+        Namespace(foo=None)
+        >>> parser.parse_args(['--foo', 'nil'])
+        Namespace(foo=None)
+
+    """
+    if value.strip().lower() in ("none", "null", "nil"):
+        return None
+    return float(value)
+
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Value Iteration algorithm for PDDLGym environments.')
@@ -58,7 +82,7 @@ def parse_args():
     parser.add_argument(
         '--penalty',
         dest='penalty',
-        type=float,
+        type=float_or_none,
         default=DEFAULT_PENALTY,
         help="Penalty cost to quit when mode is 'penalty' (default: %s)" %
         str(DEFAULT_PENALTY))

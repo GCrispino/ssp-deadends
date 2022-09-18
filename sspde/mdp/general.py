@@ -75,7 +75,7 @@ def get_succs(s, mdp):
     s_mdp = mdp[s]
 
     succs = set()
-    for a, outcomes in s_mdp['actions'].items():
+    for _, outcomes in s_mdp['actions'].items():
         succs.update(set(outcomes.keys()))
 
     return succs
