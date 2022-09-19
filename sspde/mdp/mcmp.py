@@ -167,7 +167,7 @@ def create_pi_func_prob(variable_map, s0, A, p_max):
     det_pi = create_pi_func(variable_map, A)
 
     def pi_func(s, a):
-        if s != s0:
+        if s.literals != s0.literals:
             # if s != s0, chooses det_pi(s) with probability 1 and any other action with probability 0
             return float(det_pi(s) == a)
 
