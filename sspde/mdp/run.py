@@ -182,6 +182,7 @@ def run_mcmp_and_eval_gubs(env,
 
     last_mcmp_cost = None
     reses = []
+    vals = []
     for p in ps:
         elapsed = time.perf_counter() - start
         print(f"  elapsed: {elapsed}, time limit: {time_limit}")
@@ -216,23 +217,34 @@ def run_mcmp_and_eval_gubs(env,
         reses.append((mincost, pi_func, p))
         print("Value at initial state:", mincost)
         print("Probability to goal at initial state:", p)
-        print("Action probabilities initial state:",
-              {a: pi_func(obs, a)
-               for a in A})
+
+        action_probs = {a: pi_func(obs, a) for a in A}
+        print("Action probabilities at initial state:",
+              {a: prob
+               for a, prob in action_probs.items() if prob > 0})
         print()
 
-    vals = eval_gubs(env,
-                     obs,
-                     succ_states,
-                     V_i,
-                     A,
-                     "mcmp",
-                     lamb,
-                     k_g,
-                     epsilon,
-                     ps,
-                     reses,
-                     mdp_graph,
-                     prob_policy=True)
+
+        # eval policy under eGUBS
+        param_cost_fn = general.create_cost_fn(mdp_graph, False, p)
+        v = gubs.eval_policy(obs,
+                             succ_states,
+                             pi_func,
+                             param_cost_fn,
+                             p_max,
+                             lamb,
+                             k_g,
+                             epsilon,
+                             mdp_graph,
+                             A,
+                             env,
+                             V_i=V_i,
+                             prob_policy=True)
+
+        vals.append(v)
+        print(
+            f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {p}:",
+            v)
+        print()
 
     return vals, ps, last_mcmp_cost
