@@ -165,10 +165,9 @@ penalty_vals, penalty_param_vals = run.run_vi_and_eval_gubs(
     batch_size=args.batch_size,
 )
 
-penalty_vals = np.array(penalty_vals)
 n_penalty_vals = len(penalty_vals)
-print("penalty values used:", penalty_param_vals)
-penalty_param_vals = np.log(penalty_param_vals)
+penalty_vals = np.array(penalty_vals)
+print("penalty values used:", penalty_param_vals[:n_penalty_vals])
 
 fig, ax = plt.subplots()
 ax.set_title("eGUBS criterion vs. other criteria")
@@ -177,7 +176,7 @@ pl_penalty, = ax.plot(penalty_param_vals[:n_penalty_vals],
                       penalty_vals,
                       label="penalty",
                       marker="^")
-ax.set_xlabel(r"$\log(D)$")
+ax.set_xlabel(r"$D$")
 ax.set_ylabel(r"Policy evaluation according to eGUBS at $s_0$")
 
 ax2 = ax.twiny()
