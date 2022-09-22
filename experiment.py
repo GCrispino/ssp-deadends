@@ -134,9 +134,10 @@ discounted_vals, discounted_param_vals = run.run_vi_and_eval_gubs(
     elapsed_gubs,
     batch_size=args.batch_size)
 
-discounted_vals = np.array(discounted_vals)
 n_discounted_vals = len(discounted_vals)
-print("discount factor values used:", discounted_param_vals)
+discounted_vals = np.array(discounted_vals)
+print("discount factor values used:",
+      discounted_param_vals[:n_discounted_vals])
 discounted_param_vals = -np.log(1 - discounted_param_vals)
 
 if args.penalty != None:
