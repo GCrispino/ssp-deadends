@@ -91,14 +91,24 @@ stop = time.perf_counter()
 elapsed_gubs = stop - start
 
 # Compute MCMP
-mcmp_vals, mcmp_p_vals, last_mcmp_cost = run.run_mcmp_and_eval_gubs(
-    env, obs, argparsing.DEFAULT_INIT_PARAM_VALUE, no_penalty_S, A,
-    no_penalty_V_i, general_succ_states, lamb, k_g, args.epsilon,
-    no_penalty_mdp_graph, elapsed_gubs)
+mcmp_vals, mcmp_p_vals, mincost_maxprob = run.run_mcmp_and_eval_gubs(
+    env,
+    obs,
+    argparsing.DEFAULT_INIT_PARAM_VALUE,
+    no_penalty_S,
+    A,
+    no_penalty_V_i,
+    general_succ_states,
+    lamb,
+    k_g,
+    args.epsilon,
+    no_penalty_mdp_graph,
+    elapsed_gubs,
+    batch_size=args.batch_size)
 
 mcmp_vals = np.array(mcmp_vals)
 n_mcmp_vals = len(mcmp_vals)
-print("mcmp values used:", mcmp_p_vals)
+print("mcmp values used:", mcmp_p_vals[-n_mcmp_vals:])
 
 # TODO -> o valor do eGUBS pro primeiro valor de desconto dá 0, enquanto que rodando o main.py pro mesmo valor, retorna 0.13101062.
 #         quando não usamos as variáveis "no_penalty" aqui, o mesmo valor é retornado, o que talvez indique que o outro script esteja errado porque __talvez__ usa as variáveis de penalidade mesmo quando está no desconto
@@ -132,7 +142,7 @@ discounted_param_vals = -np.log(1 - discounted_param_vals)
 if args.penalty != None:
     max_penalty = args.penalty
 else:
-    max_penalty = last_mcmp_cost * 5
+    max_penalty = mincost_maxprob * 5
 
 penalty_succ_states = get_succ_states("penalty", A, mdp_graph)
 penalty_vals, penalty_param_vals = run.run_vi_and_eval_gubs(
@@ -180,7 +190,7 @@ ax2.set_xlabel(r"$-\log(1 - \gamma)$")
 
 ax3 = ax.twiny()
 ax3.spines['top'].set_position(("axes", 1.15))
-pl_mcmp, = ax3.plot(mcmp_p_vals[:n_mcmp_vals],
+pl_mcmp, = ax3.plot(mcmp_p_vals[-n_mcmp_vals:],
                     mcmp_vals,
                     color="tab:orange",
                     label="MCMP",

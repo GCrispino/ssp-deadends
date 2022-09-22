@@ -183,7 +183,8 @@ def run_mcmp_and_eval_gubs(env,
     last_mcmp_cost = None
     reses = []
     vals = []
-    for p in ps:
+    mincost_maxprob = None
+    for p in reversed(ps):
         elapsed = time.perf_counter() - start
         print(f"  elapsed: {elapsed}, time limit: {time_limit}")
         if elapsed > time_limit:
@@ -191,7 +192,7 @@ def run_mcmp_and_eval_gubs(env,
                 f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
             break
 
-        print(f"running for param val p_max={p_max}:")
+        print(f"running for param val p_max={p}:")
         mincost, model_cost, timed_out = mcmp.mcmp(obs,
                                                    S_i,
                                                    variable_map,
@@ -204,7 +205,9 @@ def run_mcmp_and_eval_gubs(env,
                                                    start=start,
                                                    log_solver=False)
 
-        last_mcmp_cost = mincost
+        if mincost_maxprob is None:
+            mincost_maxprob = mincost
+
         var_map = deepcopy(variable_map)
         pi_func = mcmp.create_pi_func_prob(var_map, obs, A, p)
 
@@ -247,4 +250,7 @@ def run_mcmp_and_eval_gubs(env,
             v)
         print()
 
-    return vals, ps, last_mcmp_cost
+    reses = reses[::-1]
+    vals = vals[::-1]
+
+    return vals, ps, mincost_maxprob
