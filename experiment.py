@@ -89,6 +89,7 @@ stop = time.perf_counter()
 
 # get elapsed
 elapsed_gubs = stop - start
+time_limit = None if args.limit_time is False else elapsed_gubs
 
 # Compute MCMP
 mcmp_vals, mcmp_p_vals, mincost_maxprob = run.run_mcmp_and_eval_gubs(
@@ -103,7 +104,7 @@ mcmp_vals, mcmp_p_vals, mincost_maxprob = run.run_mcmp_and_eval_gubs(
     k_g,
     args.epsilon,
     no_penalty_mdp_graph,
-    elapsed_gubs,
+    time_limit,
     batch_size=args.batch_size)
 
 mcmp_vals = np.array(mcmp_vals)
@@ -131,7 +132,7 @@ discounted_vals, discounted_param_vals = run.run_vi_and_eval_gubs(
     lamb,
     args.epsilon,
     no_penalty_mdp_graph,
-    elapsed_gubs,
+    time_limit,
     batch_size=args.batch_size)
 
 n_discounted_vals = len(discounted_vals)

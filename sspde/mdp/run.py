@@ -67,8 +67,9 @@ def run_vi_and_eval_gubs(env,
                          lamb,
                          epsilon,
                          mdp_graph,
-                         time_limit,
+                         time_limit=None,
                          batch_size=5):
+    has_time_limit = bool(time_limit)
     start = time.perf_counter()
 
     if mode == "discounted":
@@ -101,7 +102,7 @@ def run_vi_and_eval_gubs(env,
     for kwargs in kwargs_list:
         elapsed = time.perf_counter() - start
         print(f"  elapsed: {elapsed}, time limit: {time_limit}")
-        if elapsed > time_limit:
+        if has_time_limit and elapsed > time_limit:
             print(
                 f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
             break
@@ -120,7 +121,7 @@ def run_vi_and_eval_gubs(env,
                                     time_limit=time_limit,
                                     **kwargs)
 
-        if timed_out:
+        if has_time_limit and timed_out:
             print(
                 f"  elapsed time of {elapsed} exceeded limit of {time_limit} during value iteration"
             )
@@ -151,9 +152,10 @@ def run_mcmp_and_eval_gubs(env,
                            k_g,
                            epsilon,
                            mdp_graph,
-                           time_limit,
+                           time_limit=None,
                            batch_size=5):
 
+    has_time_limit = bool(time_limit)
     start = time.perf_counter()
 
     # Initialize variables
@@ -187,7 +189,7 @@ def run_mcmp_and_eval_gubs(env,
     for p in reversed(ps):
         elapsed = time.perf_counter() - start
         print(f"  elapsed: {elapsed}, time limit: {time_limit}")
-        if elapsed > time_limit:
+        if has_time_limit and elapsed > time_limit:
             print(
                 f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
             break
@@ -211,7 +213,7 @@ def run_mcmp_and_eval_gubs(env,
         var_map = deepcopy(variable_map)
         pi_func = mcmp.create_pi_func_prob(var_map, obs, A, p)
 
-        if timed_out:
+        if has_time_limit and timed_out:
             print(
                 f"  elapsed time of {elapsed} exceeded limit of {time_limit} during value iteration"
             )

@@ -9,6 +9,7 @@ DEFAULT_INIT_PARAM_VALUE = 0.01
 DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
 DEFAULT_BATCH_SIZE = 20
+DEFAULT_LIMIT_TIME = False
 DEFAULT_LAMBDA = -0.1
 DEFAULT_KG = 1
 DEFAULT_SIMULATE = False
@@ -102,6 +103,14 @@ def parse_args():
         help=
         "Size of batch in batch mode (default: %s)"
         % DEFAULT_BATCH_SIZE)
+    parser.add_argument(
+        '--limit_time',
+        dest='limit_time',
+        default=DEFAULT_LIMIT_TIME,
+        action="store_true",
+        help=
+        "Defines whether or not to limit solving of alternate criteria by the time it takes to solve the problem for the eGUBS criterion (default: %s)"
+        % DEFAULT_LIMIT_TIME)
     parser.add_argument('--lambda',
                         dest='lamb',
                         type=float,
