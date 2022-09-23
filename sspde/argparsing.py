@@ -4,7 +4,9 @@ DEFAULT_PROB_INDEX = 0
 DEFAULT_ALGORITHM = "vi"
 DEFAULT_EPSILON = 0.1
 DEFAULT_GAMMA = 0.99
+DEFAULT_GAMMA_VALS = []
 DEFAULT_PENALTY = 10
+DEFAULT_PENALTY_VALS = []
 DEFAULT_INIT_PARAM_VALUE = 0.01
 DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
@@ -80,6 +82,13 @@ def parse_args():
                         default=DEFAULT_GAMMA,
                         help="Discount factor (default: %s)" %
                         str(DEFAULT_GAMMA))
+    parser.add_argument('--gamma_vals',
+                        dest='gamma_vals',
+                        type=float,
+                        nargs="*",
+                        default=DEFAULT_GAMMA_VALS,
+                        help="Specific discount factor values to run experiments for (default: %s)" %
+                        str(DEFAULT_GAMMA_VALS))
     parser.add_argument(
         '--penalty',
         dest='penalty',
@@ -87,6 +96,13 @@ def parse_args():
         default=DEFAULT_PENALTY,
         help="Penalty cost to quit when mode is 'penalty' (default: %s)" %
         str(DEFAULT_PENALTY))
+    parser.add_argument('--penalty_vals',
+                        dest='penalty_vals',
+                        type=float,
+                        nargs="*",
+                        default=DEFAULT_PENALTY_VALS,
+                        help="Specific penalty values to run experiments for (default: %s)" %
+                        str(DEFAULT_PENALTY_VALS))
     parser.add_argument(
         '--batch',
         dest='batch',

@@ -116,13 +116,25 @@ print("mcmp values used:", mcmp_p_vals[-n_mcmp_vals:])
 #         ou o experiment.py ta errado
 start = time.perf_counter()
 discounted_succ_states = get_succ_states("discounted", A, mdp_graph)
+
+if args.gamma_vals:
+    discounted_vals = np.array(args.gamma_vals)
+else:
+    percentage_log_vals = 0.75
+    n_log_vals = math.floor(args.batch_size * percentage_log_vals)
+    n_linear_vals = args.batch_size - n_log_vals
+
+    discounted_vals = np.concatenate(
+        (np.linspace(argparsing.DEFAULT_INIT_PARAM_VALUE, 0.9,
+                     n_linear_vals + 1)[:-1],
+         (float(0.9)**np.logspace(0, -10, num=n_log_vals))))
+
 discounted_vals, discounted_param_vals = run.run_vi_and_eval_gubs(
     env,
     obs,
     goal,
     "discounted",
-    argparsing.DEFAULT_INIT_PARAM_VALUE,
-    args.gamma,
+    discounted_vals,
     no_penalty_S,
     A,
     no_penalty_V_i,
@@ -147,13 +159,18 @@ else:
     max_penalty = mincost_maxprob * 5
 
 penalty_succ_states = get_succ_states("penalty", A, mdp_graph)
+if args.penalty_vals:
+    penalty_vals = np.array(args.penalty_vals)
+else:
+    penalty_vals = np.linspace(argparsing.DEFAULT_INIT_PARAM_VALUE,
+                               max_penalty, args.batch_size)
+
 penalty_vals, penalty_param_vals = run.run_vi_and_eval_gubs(
     env,
     obs,
     goal,
     "penalty",
-    argparsing.DEFAULT_INIT_PARAM_VALUE,
-    max_penalty,
+    penalty_vals,
     S,
     A,
     V_i,

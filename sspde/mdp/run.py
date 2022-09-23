@@ -56,8 +56,7 @@ def run_vi_and_eval_gubs(env,
                          obs,
                          goal,
                          mode,
-                         init_val,
-                         val,
+                         param_vals,
                          S,
                          A,
                          V_i,
@@ -76,25 +75,6 @@ def run_vi_and_eval_gubs(env,
         param = "gamma"
     elif mode == "penalty":
         param = "penalty"
-
-    # param_vals = [getattr(args, param)]
-    param_vals = [val]
-
-    n_vals = batch_size
-    if mode == "discounted":
-        # half = n_vals / 2
-        # n_linear_vals = math.floor(half)
-        # n_log_vals = math.ceil(half)
-        percentage_log_vals = 0.75
-        n_log_vals = math.floor(n_vals * percentage_log_vals)
-        n_linear_vals = n_vals - n_log_vals
-
-        param_vals = np.concatenate(
-            (np.linspace(init_val, 0.9, n_linear_vals + 1)[:-1],
-             (float(0.9)**np.logspace(0, -10, num=n_log_vals))))
-
-    elif mode == "penalty":
-        param_vals = np.linspace(init_val, val, n_vals)
 
     kwargs_list = [{"mode": mode, param: val} for val in param_vals]
 
