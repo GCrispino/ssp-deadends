@@ -10,7 +10,6 @@ def vi(S,
        succ_states,
        A,
        V_i,
-       G_i,
        goal,
        env,
        epsilon,
@@ -24,8 +23,8 @@ def vi(S,
     V = np.zeros(len(V_i))
     P = np.zeros(len(V_i))
     pi = np.full(len(V_i), None)
-    # print(len(S), len(V_i), len(G_i), len(P))
-    # print(G_i)
+
+    G_i = [V_i[s] for s in V_i if mdp_graph[s]['goal']]
     P[G_i] = 1
 
     i = 0
@@ -43,8 +42,6 @@ def vi(S,
         P_ = np.copy(P)
 
         for s in S:
-            # if check_goal(s, goal):
-            #     continue
             if mdp_graph[s]['goal']:
                 continue
             Q = np.zeros(len(A))
@@ -70,12 +67,10 @@ def vi(S,
                 else:
                     i_a_best = np.argmin(Q)
                     pi[V_i[s]] = A[i_a_best]
-                    # P[V_i[s]] = np.max(Q_p)
                     P[V_i[s]] = Q_p[i_a_best]
             else:
                 i_a_best = np.argmin(Q)
                 pi[V_i[s]] = A[i_a_best]
-                # P[V_i[s]] = np.max(Q_p)
                 P[V_i[s]] = Q_p[i_a_best]
 
         diff = np.linalg.norm(V_ - V, np.inf)
@@ -85,6 +80,7 @@ def vi(S,
         if diff + diff_p < epsilon:
             break
         i += 1
+
     return V, pi, P, False
 
 
