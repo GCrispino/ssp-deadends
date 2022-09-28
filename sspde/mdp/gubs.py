@@ -31,6 +31,9 @@ def eval_policy(s0,
 
     print("Value of rs policy", V_rs[V_i[s0]])
     print("Prob to goal of rs policy", P_rs[V_i[s0]])
+    if prob_policy:
+        # check if probability to goal of computed policy is 'close enough' to p_max
+        assert np.abs(P_rs[V_i[s0]] - p_max) < (epsilon ** 0.5)
 
     return V_rs[V_i[s0]] + k_g * p_max
 
@@ -219,5 +222,17 @@ def rs_and_egubs_vi(s0, S, A, succ_states, V_i, goal, k_g, lamb, epsilon, h,
     print("C_max:", C_max)
 
     print("Running eGUBS-VI to find optimal eGUBS policy")
-    return egubs_vi(V_rs, P_rs, pi_rs, C_max, lamb, k_g, V_i, S, goal,
+    V, V_rs_C, P, pi = egubs_vi(V_rs, P_rs, pi_rs, C_max, lamb, k_g, V_i, S, goal,
                     succ_states, A, mdp_graph)
+
+    v_gubs = V[V_i[s0], 0]
+    v_rs = V_rs_C[V_i[s0], 0]
+    p_gubs = P[V_i[s0], 0]
+    a_opt_gubs = pi[V_i[s0], 0]
+    print("Best action at initial state for eGUBS criterion:", a_opt_gubs)
+    print("Probability to goal at initial state for eGUBS criterion:", p_gubs)
+    print("Optimal value at initial state for rs criterion:", v_rs)
+    print("Optimal value at initial state for eGUBS criterion:", v_gubs)
+    print()
+
+    return V, V_rs_C, P, pi
