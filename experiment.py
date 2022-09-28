@@ -187,7 +187,7 @@ penalty_vals, penalty_param_vals = run.run_vi_and_eval_gubs(
     lamb,
     args.epsilon,
     mdp_graph,
-    elapsed_gubs,
+    time_limit,
     batch_size=args.batch_size,
 )
 
