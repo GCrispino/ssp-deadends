@@ -7,6 +7,7 @@ import gym
 import imageio
 import matplotlib
 import matplotlib.pyplot as plt
+
 import numpy as np
 import pddlgym
 import pulp
@@ -21,7 +22,15 @@ import sspde.rendering as rendering
 
 from datetime import datetime
 
+from matplotlib.backends.backend_pdf import PdfPages
+
 from sspde.mdp.vi import get_succ_states, vi
+
+def save_fig_page(fig, path):
+    pp = PdfPages(path)
+    fig.savefig(pp, format="pdf")
+    pp.close()
+
 
 #matplotlib.use('agg')
 
@@ -234,6 +243,6 @@ output_dir = os.path.join(output_outdir, domain_name, problem_name,
 if args.render_and_save:
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
-    plt.savefig(os.path.join(output_dir, "criteria.png"))
+    save_fig_page(fig, os.path.join(output_dir, "criteria.pdf"))
 if args.plot_stats:
     plt.show()
