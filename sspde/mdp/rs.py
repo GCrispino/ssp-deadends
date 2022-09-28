@@ -22,13 +22,13 @@ def rs_eval(succ_states,
 
     # initialize
     V = np.zeros(n_states, dtype=float)
-
     # TODO -> add heuristics here?
     #for s in not_goal:
     #    V[V_i[s]] = h_v(s)
-    #P = np.zeros(n_states, dtype=float)
     V[G_i] = -np.sign(lamb)
-    #P[G_i] = 1
+
+    P = np.zeros(n_states, dtype=float)
+    P[G_i] = 1
 
     i = 1
 
@@ -41,7 +41,8 @@ def rs_eval(succ_states,
 
     while True:
         V_ = np.copy(V)
-        #P_ = np.copy(P)
+        P_ = np.copy(P)
+
         for s in not_goal:
 
             def Q(s, a):
@@ -53,15 +54,25 @@ def rs_eval(succ_states,
                     for s_, p in all_reachable.items()
                 ])
 
+            def Q_p(s, a):
+                all_reachable = succ_states[s, a]
+
+                return np.sum(
+                    [P[V_i[s_]] * p for s_, p in all_reachable.items()])
+
             if prob_policy:
                 action_result = sum(pi_cache_fn(s, a) * Q(s, a) for a in A)
+                action_result_p = sum(pi_cache_fn(s, a) * Q_p(s, a) for a in A)
             else:
                 # deterministic policy
                 action_result = Q(s, pi(s))
+                action_result_p = Q_p(s, pi(s))
 
             V_[V_i[s]] = action_result
+            P_[V_i[s]] = action_result_p
 
         v_norm = np.linalg.norm(V_ - V, np.inf)
+        p_norm = np.linalg.norm(P_ - P, np.inf)
 
         # print("Iteration", i)
         # print(' delta1:', v_norm, p_norm, v_norm + p_norm)
@@ -69,11 +80,11 @@ def rs_eval(succ_states,
         if v_norm < epsilon:
             break
         V = V_
-        #P = P_
+        P = P_
         i += 1
 
     #print(f'{i} iterations')
-    return V, i
+    return V, P, i
 
 
 def rs_lexicographic(lamb,

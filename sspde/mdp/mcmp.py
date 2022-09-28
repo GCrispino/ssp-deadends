@@ -50,7 +50,17 @@ def get_out_flow(variable_map, mdp):
     return outs
 
 
-def mcmp(s_0, S_i, variable_map, in_flow, out_flow, p_max, cost_fn, env, mdp, log_solver=False, start=None):
+def mcmp(s_0,
+         S_i,
+         variable_map,
+         in_flow,
+         out_flow,
+         p_max,
+         cost_fn,
+         env,
+         mdp,
+         log_solver=False,
+         start=None):
     # Create the model
     model_cost = pulp.LpProblem(name="mcmp", sense=pulp.LpMinimize)
 
