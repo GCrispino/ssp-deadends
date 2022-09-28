@@ -6,7 +6,7 @@ import numpy as np
 import sspde.pddl as pddl
 
 from sspde.mdp.general import sample_state
-from sspde.mdp.rs import rs_lexicographic, rs_lexicographic_eval
+from sspde.mdp.rs import rs_lexicographic, rs_eval
 
 
 def eval_policy(s0,
@@ -26,11 +26,11 @@ def eval_policy(s0,
         S = list(sorted([s for s in mdp_graph]))
         V_i = {s: i for i, s in enumerate(S)}
 
-    V_rs, _ = rs_lexicographic_eval(succ_states, V_i, A, pi, cost_fn, lamb,
+    V_rs, P_rs, _ = rs_eval(succ_states, V_i, A, pi, cost_fn, lamb,
                                     epsilon, mdp_graph, env, prob_policy=prob_policy)
 
-    print("Value of rs lexicographic policy", V_rs[V_i[s0]])
-    print("Prob to goal of rs lexicographic policy", p_max)
+    print("Value of rs policy", V_rs[V_i[s0]])
+    print("Prob to goal of rs policy", P_rs[V_i[s0]])
 
     return V_rs[V_i[s0]] + k_g * p_max
 

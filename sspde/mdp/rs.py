@@ -5,7 +5,7 @@ import sspde.rendering as rendering
 
 # TODO -> parece estar errado pro critério de penalidade em valores pequenos
 #           - verificar se em outros valores faz sentido também
-def rs_lexicographic_eval(succ_states,
+def rs_eval(succ_states,
                           V_i,
                           A,
                           pi,
