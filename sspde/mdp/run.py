@@ -189,7 +189,8 @@ def run_mcmp_and_eval_gubs(env,
             mincost_maxprob = mincost
 
         var_map = deepcopy(variable_map)
-        pi_func = mcmp.create_pi_func_prob(var_map, obs, A, p)
+        pi_func = mcmp.create_pi_func_prob(env, var_map, in_flow, out_flow, obs, A,
+                                           p)
 
         if has_time_limit and timed_out:
             print(
@@ -214,7 +215,7 @@ def run_mcmp_and_eval_gubs(env,
                              succ_states,
                              pi_func,
                              param_cost_fn,
-                             p_max,
+                             p,
                              lamb,
                              k_g,
                              epsilon,

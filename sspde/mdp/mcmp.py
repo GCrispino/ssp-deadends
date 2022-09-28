@@ -163,16 +163,30 @@ def create_pi_func(variable_map, A):
 
     return pi_func
 
-def create_pi_func_prob(variable_map, s0, A, p_max):
-    det_pi = create_pi_func(variable_map, A)
+
+def create_pi_func_prob(env, variable_map, in_flow, out_flow, s0, A, p_max):
 
     def pi_func(s, a):
-        if s.literals != s0.literals:
-            # if s != s0, chooses det_pi(s) with probability 1 and any other action with probability 0
-            return float(det_pi(s) == a)
+        if s not in out_flow:
+            return 0
 
-        # if s == s0, chooses action a in s with probability given by the x_s_a LP model variable
-        return variable_map[s, a].value()
+        out_val = out_flow[s].value()
+
+        if out_val == 0:
+            return 0
+
+        in_val = in_flow[s].value()
+        out_diff = out_val - in_val
+        if s.literals != s0.literals:
+            if out_diff < 0 and math.fabs(out_diff) > 1e-5:
+                # TODO - what to do when out(s) - in(s) < 0 ? 
+                print(rendering.get_state_id(env, s))
+                print("  ", out_val, in_val, out_val - in_val)
+                assert False
+            return variable_map[s, a].value() / out_val
+
+        # if s == s0, chooses action a with probability (out(s) - in(s)) * (x_s_a / out(s))
+        return out_diff * (variable_map[s, a].value() / out_val)
 
     return pi_func
 
