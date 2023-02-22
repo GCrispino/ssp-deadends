@@ -78,3 +78,5 @@ options:
   --plot_stats          Defines whether or not to run a series of episodes with both a random policy and the policy
                         returned by the algorithm and plot stats about these runs (default: False)
 ```
+
+NOTE: currently running solvers via the `main.py` is not working.
