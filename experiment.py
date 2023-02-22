@@ -219,7 +219,7 @@ pl_discounted, = ax2.plot(discounted_param_vals[:n_discounted_vals],
                           label="discounted",
                           color="tab:green",
                           marker="P")
-ax2.set_xlabel(r"$-\log(1 - \gamma)$")
+ax2.set_xlabel(r"$-\log_2(1 - \gamma)$")
 
 ax3 = ax.twiny()
 ax3.spines['top'].set_position(("axes", 1.15))
