@@ -249,8 +249,10 @@ output_outdir = args.output_dir
 output_dir = os.path.join(output_outdir, domain_name, problem_name,
                           f"{str(datetime.now().timestamp())}")
 if args.render_and_save:
+    plot_file_path = os.path.join(output_dir, "criteria.pdf")
+    print(f"writing plot figure to {plot_file_path}")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
-    save_fig_page(fig, os.path.join(output_dir, "criteria.pdf"))
+    save_fig_page(fig, plot_file_path)
 if args.plot_stats:
     plt.show()
