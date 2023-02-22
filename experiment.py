@@ -113,7 +113,8 @@ mcmp_vals, mcmp_p_vals, mincost_maxprob = run.run_mcmp_and_eval_gubs(
     k_g,
     args.epsilon,
     no_penalty_mdp_graph,
-    time_limit,
+    p_maxs=args.pmax_vals,
+    time_limit=time_limit,
     batch_size=args.batch_size)
 
 mcmp_vals = np.array(mcmp_vals)

@@ -7,6 +7,7 @@ DEFAULT_GAMMA = 0.99
 DEFAULT_GAMMA_VALS = []
 DEFAULT_PENALTY = 10
 DEFAULT_PENALTY_VALS = []
+DEFAULT_PMAX_VALS = None
 DEFAULT_INIT_PARAM_VALUE = 0.01
 DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
@@ -103,6 +104,13 @@ def parse_args():
                         default=DEFAULT_PENALTY_VALS,
                         help="Specific penalty values to run experiments for (default: %s)" %
                         str(DEFAULT_PENALTY_VALS))
+    parser.add_argument('--pmax_vals',
+                        dest='pmax_vals',
+                        type=float,
+                        nargs="*",
+                        default=DEFAULT_PMAX_VALS,
+                        help="Specific p_max values to run experiments on MCMP for (default: %s)" %
+                        str(DEFAULT_PMAX_VALS))
     parser.add_argument(
         '--batch',
         dest='batch',

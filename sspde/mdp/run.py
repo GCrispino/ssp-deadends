@@ -130,6 +130,7 @@ def run_mcmp_and_eval_gubs(env,
                            k_g,
                            epsilon,
                            mdp_graph,
+                           p_maxs=None,
                            time_limit=None,
                            batch_size=5):
 
@@ -150,13 +151,16 @@ def run_mcmp_and_eval_gubs(env,
     out_flow = mcmp.get_out_flow(variable_map, mdp_graph)
 
     S_i = {s: i for i, s in enumerate(S)}
-    p_max, model_prob = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
-                                        mdp_graph)
+    if p_maxs is None:
+        p_max, model_prob = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
+                                            mdp_graph)
 
-    # TODO -> put time check here and early return if time is up
+        # TODO -> put time check here and early return if time is up
 
-    n_vals = batch_size
-    ps = np.linspace(init_pval, p_max, n_vals)
+        n_vals = batch_size
+        ps = np.linspace(init_pval, p_max, n_vals)
+    else:
+        ps = p_maxs
 
     mcmp_cost_fn = general.create_cost_fn(mdp_graph, False)
 
@@ -207,7 +211,6 @@ def run_mcmp_and_eval_gubs(env,
               {a: prob
                for a, prob in action_probs.items() if prob > 0})
         print()
-
 
         # eval policy under eGUBS
         param_cost_fn = general.create_cost_fn(mdp_graph, False, p)
