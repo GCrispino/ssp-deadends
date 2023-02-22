@@ -77,6 +77,13 @@ def navigation_get_locations(obs):
     return pddl.get_values_of_literal_by_name(obs.literals, 'robot-at')
 
 
+def navigation_get_state_id(obs):
+    obs = obs if type(obs) == State else pddl.from_literals(obs)
+    locations = navigation_get_locations(obs)
+
+    return "deadend" if locations == [] else locations[0][0].split(":")[0]
+
+
 def navigation_text_render(obs):
     obs = obs if type(obs) == State else pddl.from_literals(obs)
     qualifiers = []
@@ -180,8 +187,8 @@ get_state_id_env_functions = {
     "PDDLEnvRiver-alt-v0": river_alt_get_state_id,
     "PDDLEnvTest_domain-v0": test_domain_get_state_id,
     "PDDLEnvTest_domain2-v0": test_domain_get_state_id,
-    #    **{k: navigation_get_state_id
-    #       for k in navigation_keys}
+    **{k: navigation_get_state_id
+       for k in navigation_keys}
 }
 
 
