@@ -218,7 +218,11 @@ def rs_and_egubs_vi(s0, S, A, succ_states, V_i, goal, k_g, lamb, epsilon, h,
     print("Optimal value at initial state for rs criterion:", v_rs)
     print()
     print("Computing C_max...")
+
+    # TODO -> replace with cmaxreachable
     C_max = get_cmax(V_rs, V_i, P_rs, S, succ_states, A, lamb, k_g, u)
+    def C_maxs(_):
+        return C_max
     print("C_max:", C_max)
 
     print("Running eGUBS-VI to find optimal eGUBS policy")
@@ -235,4 +239,7 @@ def rs_and_egubs_vi(s0, S, A, succ_states, V_i, goal, k_g, lamb, epsilon, h,
     print("Optimal value at initial state for eGUBS criterion:", v_gubs)
     print()
 
-    return V, V_rs_C, P, pi
+    def pi_func(s, C):
+        return pi[V_i[s], C]
+
+    return V, V_rs_C, P, pi_func, C_maxs

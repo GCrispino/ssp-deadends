@@ -65,7 +65,10 @@ def run_vi_and_eval_gubs(env,
                          lamb,
                          epsilon,
                          mdp_graph,
+                         pi_gubs=None,
+                         C_maxs=None,
                          time_limit=None,
+                         compare_policies=False,
                          batch_size=5):
     has_time_limit = bool(time_limit)
     start = time.perf_counter()
@@ -107,7 +110,38 @@ def run_vi_and_eval_gubs(env,
 
         pi_func = general.create_pi_func(pi, V_i)
 
+        if compare_policies and pi_gubs:
+            diffs, reachable_stat, reachable_non_stat = general.compare_policies(obs, pi_gubs, pi_func, C_maxs,
+                                             mdp_graph, env)
+
+            print("policies comparison:")
+            if len(diffs) == 0:
+                print("  policies are equal!")
+            for s_, C in diffs.items():
+                print(f"  difference in {rendering.get_state_id(env, s_)}: {C}")
+                print(f"    pi_stat({rendering.get_state_id(env, s_)}) = {pi_func(s_)}")
+                if C >= 0:
+                    print(f"    pi_gubs({rendering.get_state_id(env, s_)}, {C}) = {pi_gubs(s_, C)}")
+
         reses.append((V[V_i[obs]], pi_func, P[V_i[obs]]))
+
+        if compare_policies:
+            for s__, a in reachable_stat.items():
+                print()
+                print("state:", rendering.get_state_id(env, s__))
+                print("  best action:", pi_func(s__))
+
+            for s__, vals in reachable_non_stat.items():
+                print()
+                print("state:", rendering.get_state_id(env, s__))
+                for C_, a in vals.items():
+                    print("  cost:", C_)
+                    #print("value:", V[V_i[s]])
+                    #print("prob-to-goal:", P[V_i[s]])
+                    print("  best action:", pi_gubs(s__, C_))
+
+
+
         print("Value at initial state:", V[V_i[obs]])
         print("Probability to goal at initial state:", P[V_i[obs]])
         print("Best action at initial state:", pi[V_i[obs]])
@@ -193,8 +227,8 @@ def run_mcmp_and_eval_gubs(env,
             mincost_maxprob = mincost
 
         var_map = deepcopy(variable_map)
-        pi_func = mcmp.create_pi_func_prob(env, var_map, in_flow, out_flow, obs, A,
-                                           p)
+        pi_func = mcmp.create_pi_func_prob(env, var_map, in_flow, out_flow,
+                                           obs, A, p)
 
         if has_time_limit and timed_out:
             print(

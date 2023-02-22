@@ -85,20 +85,22 @@ def h_1(s):
 # begin time
 start = time.perf_counter()
 
-V_gubs, V_rs_C, P_gubs, pi_gubs = gubs.rs_and_egubs_vi(obs, S, A,
+V_gubs, V_rs_C, P_gubs, pi_gubs, C_maxs = gubs.rs_and_egubs_vi(obs, S, A,
                                                        general_succ_states,
                                                        V_i, goal, k_g, lamb,
                                                        args.epsilon, h_1,
                                                        mdp_graph)
 v_gubs = V_gubs[V_i[obs], 0]
 p_gubs = P_gubs[V_i[obs], 0]
-a_opt_gubs = pi_gubs[V_i[obs], 0]
+# a_opt_gubs = pi_gubs[V_i[obs], 0]
+a_opt_gubs = pi_gubs(obs, 0)
 
 stop = time.perf_counter()
 
 # get elapsed
 elapsed_gubs = stop - start
 time_limit = None if args.limit_time is False else elapsed_gubs
+print("Elapsed time to compute optimal policy for eGUBS:", elapsed_gubs)
 
 # Compute MCMP
 mcmp_vals, mcmp_p_vals, mincost_maxprob = run.run_mcmp_and_eval_gubs(
@@ -153,14 +155,17 @@ discounted_vals, discounted_param_vals = run.run_vi_and_eval_gubs(
     lamb,
     args.epsilon,
     no_penalty_mdp_graph,
-    time_limit,
+    pi_gubs=pi_gubs,
+    C_maxs=C_maxs,
+    time_limit=time_limit,
+    compare_policies=args.compare_policies,
     batch_size=args.batch_size)
 
 n_discounted_vals = len(discounted_vals)
 discounted_vals = np.array(discounted_vals)
 print("discount factor values used:",
       discounted_param_vals[:n_discounted_vals])
-discounted_param_vals = -np.log(1 - discounted_param_vals)
+discounted_param_vals = -np.log2(1 - discounted_param_vals)
 
 if args.penalty != None:
     max_penalty = args.penalty
@@ -188,7 +193,9 @@ penalty_vals, penalty_param_vals = run.run_vi_and_eval_gubs(
     lamb,
     args.epsilon,
     mdp_graph,
-    time_limit,
+    pi_gubs=pi_gubs,
+    C_maxs=C_maxs,
+    time_limit=time_limit,
     batch_size=args.batch_size,
 )
 

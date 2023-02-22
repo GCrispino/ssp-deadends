@@ -115,3 +115,110 @@ def create_pi_func(pi, V_i):
         return pi_[V_i[s]]
 
     return pi_func
+
+
+def traverse_mdp_graph_with_policy(s0,
+                                   pi,
+                                   mdp_graph,
+                                   nonstat=False,
+                                   C_maxs=None):
+
+    if nonstat:
+        if C_maxs is None:
+            raise ValueError("C_maxs cannot be None")
+
+    # TODO -> change to deque if it makes a difference
+    if nonstat:
+        to_visit = [(s0, 0)]
+    else:
+        to_visit = [s0]
+
+    visited = {}
+
+    while len(to_visit) != 0:
+        if nonstat:
+            s, C = to_visit.pop()
+            a = pi(s, C)
+            c = 0 if mdp_graph[s]['goal'] else 1
+
+            if s not in visited:
+                visited[s] = {}
+
+            visited[s][C] = a
+            if C >= C_maxs(s):
+                continue
+
+            C_ = C + c
+        else:
+            s = to_visit.pop()
+            a = pi(s)
+            c = 1
+            visited[s] = a
+
+        if mdp_graph[s]['goal']:
+            continue
+
+        succs = mdp_graph[s]['actions'][a].keys()
+
+        for succ in succs:
+            if nonstat:
+                succ_not_visited = succ not in visited
+                succ_C_not_visited = (not succ_not_visited) and (
+                    C_ not in visited[succ])
+                #if (not succ_not_visited) or (not succ_C_not_visited):
+                if (succ_not_visited) or (succ_C_not_visited):
+                    to_visit.append((succ, C_))
+            else:
+                if succ not in visited:
+                    to_visit.append(succ)
+
+    return visited
+
+
+def compare_policies(s0, pi_ns, pi, C_maxs, mdp_graph, env):
+    """
+        Compares a non-stationary policy pi_ns with a stationary policy pi
+    """
+    reachable_stat = traverse_mdp_graph_with_policy(s0, pi, mdp_graph)
+    reachable_non_stat = traverse_mdp_graph_with_policy(s0,
+                                                        pi_ns,
+                                                        mdp_graph,
+                                                        nonstat=True,
+                                                        C_maxs=C_maxs)
+
+    log = False
+    if log:
+        print("stat policy:")
+        for s, a in reachable_stat.items():
+            s_id = rendering.get_state_id(env, s)
+            print(f"  pistat({s_id}): {a}")
+
+        print("non stat policy:")
+        for s, cs in reachable_non_stat.items():
+            s_id = rendering.get_state_id(env, s)
+            print(f"  pinonstat({s_id}, C):")
+            for c, a in cs.items():
+                print(f"    pinonstat({s_id}, {c}): {a}")
+
+    diffs = {}
+    for s in reachable_stat:
+        if mdp_graph[s]['goal']:
+            continue
+        if s not in reachable_non_stat:
+            diffs[s] = -1
+            continue
+
+        s_id = rendering.get_state_id(env, s)
+        for C in sorted(reachable_non_stat[s]):
+            a = reachable_non_stat[s][C]
+            if a != pi(s):
+                assert a == pi_ns(s, C)
+
+                if s not in diffs or diffs[s] > C:
+                    diffs[s] = C
+                #break
+
+    for s in set(reachable_non_stat) - set(reachable_stat):
+        diffs[s] = -2
+
+    return diffs, reachable_stat, reachable_non_stat

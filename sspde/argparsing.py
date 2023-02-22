@@ -13,6 +13,7 @@ DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
 DEFAULT_BATCH_SIZE = 20
 DEFAULT_LIMIT_TIME = False
+DEFAULT_COMPARE_POLICIES = False
 DEFAULT_LAMBDA = -0.1
 DEFAULT_KG = 1
 DEFAULT_SIMULATE = False
@@ -48,7 +49,7 @@ def float_or_none(value):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Value Iteration algorithm for PDDLGym environments.')
+        description='Implementation of different algorithms for solving SSPs with deadends described as PDDLGym environments.')
 
     parser.add_argument('--env',
                         dest='env',
@@ -135,6 +136,14 @@ def parse_args():
         help=
         "Defines whether or not to limit solving of alternate criteria by the time it takes to solve the problem for the eGUBS criterion (default: %s)"
         % DEFAULT_LIMIT_TIME)
+    parser.add_argument(
+        '--compare_policies',
+        dest='compare_policies',
+        default=DEFAULT_COMPARE_POLICIES,
+        action="store_true",
+        help=
+        "Defines whether or not to run policy comparison analysis (default: %s)"
+        % DEFAULT_COMPARE_POLICIES)
     parser.add_argument('--lambda',
                         dest='lamb',
                         type=float,
