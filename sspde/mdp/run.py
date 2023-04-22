@@ -111,17 +111,22 @@ def run_vi_and_eval_gubs(env,
         pi_func = general.create_pi_func(pi, V_i)
 
         if compare_policies and pi_gubs:
-            diffs, reachable_stat, reachable_non_stat = general.compare_policies(obs, pi_gubs, pi_func, C_maxs,
-                                             mdp_graph, env)
+            diffs, reachable_stat, reachable_non_stat = general.compare_policies(
+                obs, pi_gubs, pi_func, C_maxs, mdp_graph, env)
 
             print("policies comparison:")
             if len(diffs) == 0:
                 print("  policies are equal!")
             for s_, C in diffs.items():
-                print(f"  difference in {rendering.get_state_id(env, s_)}: {C}")
-                print(f"    pi_stat({rendering.get_state_id(env, s_)}) = {pi_func(s_)}")
+                print(
+                    f"  difference in {rendering.get_state_id(env, s_)}: {C}")
+                print(
+                    f"    pi_stat({rendering.get_state_id(env, s_)}) = {pi_func(s_)}"
+                )
                 if C >= 0:
-                    print(f"    pi_gubs({rendering.get_state_id(env, s_)}, {C}) = {pi_gubs(s_, C)}")
+                    print(
+                        f"    pi_gubs({rendering.get_state_id(env, s_)}, {C}) = {pi_gubs(s_, C)}"
+                    )
 
         reses.append((V[V_i[obs]], pi_func, P[V_i[obs]]))
 
@@ -139,8 +144,6 @@ def run_vi_and_eval_gubs(env,
                     #print("value:", V[V_i[s]])
                     #print("prob-to-goal:", P[V_i[s]])
                     print("  best action:", pi_gubs(s__, C_))
-
-
 
         print("Value at initial state:", V[V_i[obs]])
         print("Probability to goal at initial state:", P[V_i[obs]])
@@ -172,17 +175,7 @@ def run_mcmp_and_eval_gubs(env,
     start = time.perf_counter()
 
     # Initialize variables
-    variables = []
-    variable_map = {}
-    for i, s in enumerate(S):
-        for a in A:
-            s_id_ = rendering.get_state_id(env, s)
-            s_id = s_id_ if s_id_ != "" else i
-            var = pulp.LpVariable(name=f"x_({s_id}-{a})", lowBound=0)
-            variables.append(var)
-            variable_map[(s, a)] = var
-    in_flow = mcmp.get_in_flow(variable_map, mdp_graph)
-    out_flow = mcmp.get_out_flow(variable_map, mdp_graph)
+    variable_map, in_flow, out_flow = mcmp.get_lp_data(env, S, A, mdp_graph)
 
     S_i = {s: i for i, s in enumerate(S)}
     if p_maxs is None:
