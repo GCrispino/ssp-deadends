@@ -80,3 +80,10 @@ options:
 ```
 
 NOTE: currently running solvers via the `main.py` is not working.
+
+## Testing
+To run the test suite, run the following:
+
+```
+$ PYTHONPATH=. pytest
+```
