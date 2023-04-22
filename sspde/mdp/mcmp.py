@@ -2,10 +2,24 @@ import math
 
 import pulp
 
-import sspde.pddl as pddl
 import sspde.rendering as rendering
 from sspde.mdp.general import get_succs, Pr
 
+def get_variables(env, S, A):
+    """
+        creates a map of variables to use in the linear programming model
+    """
+    variables = []
+    variable_map = {}
+    for i, s in enumerate(S):
+        for a in A:
+            s_id_ = rendering.get_state_id(env, s)
+            s_id = s_id_ if s_id_ != "" else i
+            var = pulp.LpVariable(name=f"x_({s_id}-{a})", lowBound=0)
+            variables.append(var)
+            variable_map[(s, a)] = var
+
+    return variable_map
 
 def get_in_flow(variable_map, mdp):
     ins = {}
@@ -49,6 +63,12 @@ def get_out_flow(variable_map, mdp):
         outs[s] = pulp.lpSum(out)
     return outs
 
+def get_lp_data(env, S, A, mdp):
+    variable_map = get_variables(env, S, A)
+    in_flow = get_in_flow(variable_map, mdp)
+    out_flow = get_out_flow(variable_map, mdp)
+
+    return variable_map, in_flow, out_flow
 
 def mcmp(s_0,
          S_i,
@@ -77,24 +97,16 @@ def mcmp(s_0,
 
     # constraint for initial state
     i_s_0 = S_i[s_0]
-    #s_0_id = i_s_0 if S_ids is None else S_ids[s_0]
     s_0_id_ = rendering.get_state_id(env, s_0)
     s_0_id = s_0_id_ if s_0_id_ != "" else i_s_0
     model_cost += (out_flow[s_0] - in_flow[s_0] <= 1, f"flow_init_{s_0_id}")
 
     # get goal state
     # TODO -> multiple goal staes might exist
-    g = [s for s, v in mdp.items() if v['goal']][0]
     gs = [s for s, v in mdp.items() if v['goal']]
     in_flow_gs = pulp.lpSum([in_flow[g] for g in gs])
 
-    i_g = S_i[g]
-    #g_id = i_g if S_ids is None else S_ids[g]
-    g_id_ = rendering.get_state_id(env, g)
-    g_id = g_id_ if g_id_ != "" else i_g
-
     # constraint for goal state
-    #model_cost += (in_flow[g] == p_max, f"flow_goal_{g_id}")
     model_cost += (in_flow_gs == p_max, f"flow_goals")
 
     # Add the objective function to the model
