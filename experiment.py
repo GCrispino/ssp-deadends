@@ -210,10 +210,29 @@ output_outdir = args.output_dir
 output_dir = os.path.join(output_outdir, domain_name, problem_name,
                           f"{str(datetime.now().timestamp())}")
 if args.render_and_save:
+    # save rendered figure
     plot_file_path = os.path.join(output_dir, "criteria.pdf")
     print(f"writing plot figure to {plot_file_path}")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     save_fig_page(fig, plot_file_path)
+
+    # save output data in JSON format
+    output_filename = str(datetime.time(datetime.now())) + '.json'
+    output_data = {
+        **vars(args),
+        'penalty_param_vals': list(penalty_param_vals),
+        'penalty_result_vals': list(penalty_vals),
+        'discounted_param_vals': list(discounted_param_vals),
+        'discounted_result_vals': list(discounted_vals),
+        'mcmp_p_vals': list(mcmp_p_vals),
+        'mcmp_result_vals': list(mcmp_vals),
+        'v_gubs': v_gubs,
+    }
+    output_file_path = utils.output(output_filename,
+                                    output_data,
+                                    output_dir=output_dir)
+    if output_file_path:
+        print("Output JSON data written to ", output_file_path)
 if args.plot_stats:
     plt.show()
