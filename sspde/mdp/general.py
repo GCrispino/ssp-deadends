@@ -99,6 +99,8 @@ def create_cost_fn(mdp_graph, has_penalty, penalty=None):
 
         if has_penalty:
             if a == pddl.quit_action:
+                # TODO -> shouldn't this use 'penalty'?
+                #       maybe have to check how policies with penalties are evaluated
                 return math.inf
 
         return 1

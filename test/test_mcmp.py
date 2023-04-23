@@ -47,7 +47,7 @@ class TestMCMP(unittest.TestCase):
         var_map = deepcopy(variable_map)
 
         pi_func = mcmp.create_pi_func_prob(env_test_domain, var_map, in_flow,
-                                           out_flow, obs, A, p_max)
+                                           out_flow, obs)
 
         assert mincost == 2
         assert pi_func(obs, move1_operator_pred()) == 1
@@ -64,7 +64,7 @@ class TestMCMP(unittest.TestCase):
         var_map = deepcopy(variable_map)
 
         pi_func = mcmp.create_pi_func_prob(env_test_domain, var_map, in_flow,
-                                           out_flow, obs, A, p_max)
+                                           out_flow, obs)
 
         # non-maxprob action is now optimal
         assert mincost == 1
@@ -82,7 +82,7 @@ class TestMCMP(unittest.TestCase):
         var_map = deepcopy(variable_map)
 
         pi_func = mcmp.create_pi_func_prob(env_test_domain, var_map, in_flow,
-                                           out_flow, obs, A, p_max)
+                                           out_flow, obs)
 
         # since there's no deterministic policy for this MDP that has 0.98
         # probability-to-goal, it yields a probabilistic policy
@@ -109,7 +109,7 @@ class TestAlphaMCMP(unittest.TestCase):
         var_map = deepcopy(variable_map)
 
         pi_func = mcmp.create_pi_func_prob(env_test_domain, var_map, in_flow,
-                                           out_flow, obs, A, self.p_max)
+                                           out_flow, obs)
 
         assert mincost == 2
         assert pi_func(obs, move1_operator_pred()) == 1
@@ -129,7 +129,7 @@ class TestAlphaMCMP(unittest.TestCase):
         var_map = deepcopy(variable_map)
 
         pi_func = mcmp.create_pi_func_prob(env_test_domain, var_map, in_flow,
-                                           out_flow, obs, A, self.p_max)
+                                           out_flow, obs)
 
         assert mincost == 1
         assert pi_func(obs, move1_operator_pred()) == 0
