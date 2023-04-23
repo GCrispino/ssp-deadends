@@ -85,7 +85,6 @@ def get_mcmp_model(name,
                    env,
                    mdp,
                    alpha=1,
-                   log_solver=False,
                    start=None):
     if name not in ("mcmp", "alpha-mcmp"):
         raise ValueError("mcmp type not supported")
@@ -165,7 +164,6 @@ def mcmp(s_0,
         cost_fn,
         env,
         mdp,
-        log_solver=log_solver,
         start=start,
     )
 
@@ -200,7 +198,6 @@ def alpha_mcmp(s_0,
         env,
         mdp,
         alpha=alpha,
-        log_solver=log_solver,
         start=start,
     )
 
@@ -262,7 +259,7 @@ def create_pi_func(variable_map, A):
     return pi_func
 
 
-def create_pi_func_prob(env, variable_map, in_flow, out_flow, s0, A, p_max):
+def create_pi_func_prob(env, variable_map, in_flow, out_flow, s0):
 
     def pi_func(s, a):
         if s not in out_flow:
