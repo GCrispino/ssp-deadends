@@ -221,6 +221,7 @@ fig = plot.plot_data(
     penalty_param_vals, penalty_vals,
     discounted_param_vals, discounted_vals,
     mcmp_p_vals, mcmp_vals,
+    alpha_vals, alpha_mcmp_vals,
     v_gubs,
 )
 
