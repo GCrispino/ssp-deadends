@@ -117,6 +117,26 @@ mcmp_vals = np.array(mcmp_vals)
 n_mcmp_vals = len(mcmp_vals)
 print("mcmp values used:", mcmp_p_vals[-n_mcmp_vals:])
 
+# Compute alphaMCMP
+alpha_mcmp_vals, alpha_vals = run.run_alpha_mcmp_and_eval_gubs(
+    env,
+    obs,
+    args.alpha_vals,
+    no_penalty_S,
+    A,
+    no_penalty_V_i,
+    general_succ_states,
+    lamb,
+    k_g,
+    args.epsilon,
+    no_penalty_mdp_graph,
+    time_limit=time_limit,
+    batch_size=args.batch_size)
+
+alpha_mcmp_vals = np.array(alpha_mcmp_vals)
+n_alpha_mcmp_vals = len(alpha_mcmp_vals)
+print("alpha_mcmp values used:", alpha_mcmp_vals[-n_alpha_mcmp_vals:])
+
 # TODO -> o valor do eGUBS pro primeiro valor de desconto dá 0, enquanto que rodando o main.py pro mesmo valor, retorna 0.13101062.
 #         quando não usamos as variáveis "no_penalty" aqui, o mesmo valor é retornado, o que talvez indique que o outro script esteja errado porque __talvez__ usa as variáveis de penalidade mesmo quando está no desconto
 #         ou o experiment.py ta errado
