@@ -46,10 +46,11 @@ def float_or_none(value):
     return float(value)
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Implementation of different algorithms for solving SSPs with deadends described as PDDLGym environments.')
+        description=
+        'Implementation of different algorithms for solving SSPs with deadends described as PDDLGym environments.'
+    )
 
     parser.add_argument('--env',
                         dest='env',
@@ -77,20 +78,23 @@ def parse_args():
                         dest='vi_mode',
                         choices=['discounted', 'penalty'],
                         default=DEFAULT_VI_MODE,
-                        help="VI algorithm mode (default: %s)" % DEFAULT_VI_MODE)
+                        help="VI algorithm mode (default: %s)" %
+                        DEFAULT_VI_MODE)
     parser.add_argument('--gamma',
                         dest='gamma',
                         type=float,
                         default=DEFAULT_GAMMA,
                         help="Discount factor (default: %s)" %
                         str(DEFAULT_GAMMA))
-    parser.add_argument('--gamma_vals',
-                        dest='gamma_vals',
-                        type=float,
-                        nargs="*",
-                        default=DEFAULT_GAMMA_VALS,
-                        help="Specific discount factor values to run experiments for (default: %s)" %
-                        str(DEFAULT_GAMMA_VALS))
+    parser.add_argument(
+        '--gamma_vals',
+        dest='gamma_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_GAMMA_VALS,
+        help=
+        "Specific discount factor values to run experiments for (default: %s)"
+        % str(DEFAULT_GAMMA_VALS))
     parser.add_argument(
         '--penalty',
         dest='penalty',
@@ -98,20 +102,23 @@ def parse_args():
         default=DEFAULT_PENALTY,
         help="Penalty cost to quit when mode is 'penalty' (default: %s)" %
         str(DEFAULT_PENALTY))
-    parser.add_argument('--penalty_vals',
-                        dest='penalty_vals',
-                        type=float,
-                        nargs="*",
-                        default=DEFAULT_PENALTY_VALS,
-                        help="Specific penalty values to run experiments for (default: %s)" %
-                        str(DEFAULT_PENALTY_VALS))
-    parser.add_argument('--pmax_vals',
-                        dest='pmax_vals',
-                        type=float,
-                        nargs="*",
-                        default=DEFAULT_PMAX_VALS,
-                        help="Specific p_max values to run experiments on MCMP for (default: %s)" %
-                        str(DEFAULT_PMAX_VALS))
+    parser.add_argument(
+        '--penalty_vals',
+        dest='penalty_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_PENALTY_VALS,
+        help="Specific penalty values to run experiments for (default: %s)" %
+        str(DEFAULT_PENALTY_VALS))
+    parser.add_argument(
+        '--pmax_vals',
+        dest='pmax_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_PMAX_VALS,
+        help=
+        "Specific p_max values to run experiments on MCMP for (default: %s)" %
+        str(DEFAULT_PMAX_VALS))
     parser.add_argument(
         '--batch',
         dest='batch',
@@ -120,14 +127,12 @@ def parse_args():
         help=
         "Defines whether or not to solve for several parameters (default: %s)"
         % DEFAULT_BATCH)
-    parser.add_argument(
-        '--batch_size',
-        dest='batch_size',
-        type=int,
-        default=DEFAULT_BATCH_SIZE,
-        help=
-        "Size of batch in batch mode (default: %s)"
-        % DEFAULT_BATCH_SIZE)
+    parser.add_argument('--batch_size',
+                        dest='batch_size',
+                        type=int,
+                        default=DEFAULT_BATCH_SIZE,
+                        help="Size of batch in batch mode (default: %s)" %
+                        DEFAULT_BATCH_SIZE)
     parser.add_argument(
         '--limit_time',
         dest='limit_time',
@@ -160,8 +165,9 @@ def parse_args():
         dest='init_param_val',
         type=float,
         default=DEFAULT_INIT_PARAM_VALUE,
-        help="Initial value for param being varied when in batch mode (default: %s)" %
-        str(DEFAULT_INIT_PARAM_VALUE))
+        help=
+        "Initial value for param being varied when in batch mode (default: %s)"
+        % str(DEFAULT_INIT_PARAM_VALUE))
     parser.add_argument(
         '--simulate',
         dest='simulate',
@@ -200,5 +206,16 @@ def parse_args():
         help=
         "Defines whether or not to run a series of episodes with both a random policy and the policy returned by the algorithm and plot stats about these runs (default: %s)"
         % DEFAULT_PLOT_STATS)
+
+    return parser.parse_args()
+
+
+def parse_plot_args():
+    parser = argparse.ArgumentParser(
+        description='Plot result charts from generated JSON output files.')
+
+    parser.add_argument('--data_file',
+                        dest='data_file',
+                        help="Generated data file to generate chart from")
 
     return parser.parse_args()

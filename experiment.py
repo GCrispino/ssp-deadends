@@ -4,27 +4,23 @@ import sys
 import time
 
 import gym
-import imageio
-import matplotlib
 import matplotlib.pyplot as plt
 
 import numpy as np
-import pddlgym
-import pulp
 
 import sspde.argparsing as argparsing
 import sspde.mdp.general as general
 import sspde.mdp.gubs as gubs
 import sspde.mdp.run as run
-import sspde.mdp.rs as rs
-import sspde.pddl as pddl
-import sspde.rendering as rendering
+import sspde.plot as plot
+import sspde.utils as utils
 
 from datetime import datetime
 
 from matplotlib.backends.backend_pdf import PdfPages
 
-from sspde.mdp.vi import get_succ_states, vi
+from sspde.mdp.vi import get_succ_states
+
 
 def save_fig_page(fig, path):
     pp = PdfPages(path)
@@ -85,11 +81,9 @@ def h_1(s):
 # begin time
 start = time.perf_counter()
 
-V_gubs, V_rs_C, P_gubs, pi_gubs, C_maxs = gubs.rs_and_egubs_vi(obs, S, A,
-                                                       general_succ_states,
-                                                       V_i, goal, k_g, lamb,
-                                                       args.epsilon, h_1,
-                                                       mdp_graph)
+V_gubs, V_rs_C, P_gubs, pi_gubs, C_maxs = gubs.rs_and_egubs_vi(
+    obs, S, A, general_succ_states, V_i, goal, k_g, lamb, args.epsilon, h_1,
+    mdp_graph)
 v_gubs = V_gubs[V_i[obs], 0]
 p_gubs = P_gubs[V_i[obs], 0]
 # a_opt_gubs = pi_gubs[V_i[obs], 0]
@@ -203,45 +197,12 @@ n_penalty_vals = len(penalty_vals)
 penalty_vals = np.array(penalty_vals)
 print("penalty values used:", penalty_param_vals[:n_penalty_vals])
 
-fig, ax = plt.subplots()
-ax.set_title("eGUBS criterion vs. other criteria")
-ax.axhline(y=v_gubs, color='r', linestyle='-', label="eGUBS optimal")
-pl_penalty, = ax.plot(penalty_param_vals[:n_penalty_vals],
-                      penalty_vals,
-                      label="penalty",
-                      marker="^")
-ax.set_xlabel(r"$D$")
-ax.set_ylabel(r"Policy evaluation according to eGUBS at $s_0$")
-
-ax2 = ax.twiny()
-pl_discounted, = ax2.plot(discounted_param_vals[:n_discounted_vals],
-                          discounted_vals,
-                          label="discounted",
-                          color="tab:green",
-                          marker="P")
-ax2.set_xlabel(r"$-\log_2(1 - \gamma)$")
-
-ax3 = ax.twiny()
-ax3.spines['top'].set_position(("axes", 1.15))
-pl_mcmp, = ax3.plot(mcmp_p_vals[-n_mcmp_vals:],
-                    mcmp_vals,
-                    color="tab:orange",
-                    label="MCMP",
-                    marker="X")
-ax3.set_xlabel(r"$p_{max}$")
-ax3.set_ylabel(r"Policy evaluation according to eGUBS at $s_0$")
-
-# set axis colors
-ax.xaxis.label.set_color(pl_penalty.get_color())
-ax2.xaxis.label.set_color(pl_discounted.get_color())
-ax3.xaxis.label.set_color(pl_mcmp.get_color())
-
-ax.tick_params(axis='x', colors=pl_penalty.get_color())
-ax2.tick_params(axis='x', colors=pl_discounted.get_color())
-ax3.tick_params(axis='x', colors=pl_mcmp.get_color())
-
-fig.legend()
-plt.subplots_adjust(top=0.75)
+fig = plot.plot_data(
+    penalty_param_vals, penalty_vals,
+    discounted_param_vals, discounted_vals,
+    mcmp_p_vals, mcmp_vals,
+    v_gubs,
+)
 
 domain_name = env.domain.domain_name
 problem_name = domain_name + str(problem_index)
@@ -249,10 +210,29 @@ output_outdir = args.output_dir
 output_dir = os.path.join(output_outdir, domain_name, problem_name,
                           f"{str(datetime.now().timestamp())}")
 if args.render_and_save:
+    # save rendered figure
     plot_file_path = os.path.join(output_dir, "criteria.pdf")
     print(f"writing plot figure to {plot_file_path}")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     save_fig_page(fig, plot_file_path)
+
+    # save output data in JSON format
+    output_filename = str(datetime.time(datetime.now())) + '.json'
+    output_data = {
+        **vars(args),
+        'penalty_param_vals': list(penalty_param_vals),
+        'penalty_result_vals': list(penalty_vals),
+        'discounted_param_vals': list(discounted_param_vals),
+        'discounted_result_vals': list(discounted_vals),
+        'mcmp_p_vals': list(mcmp_p_vals),
+        'mcmp_result_vals': list(mcmp_vals),
+        'v_gubs': v_gubs,
+    }
+    output_file_path = utils.output(output_filename,
+                                    output_data,
+                                    output_dir=output_dir)
+    if output_file_path:
+        print("Output JSON data written to ", output_file_path)
 if args.plot_stats:
     plt.show()
