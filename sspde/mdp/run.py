@@ -191,7 +191,6 @@ def run_mcmp_and_eval_gubs(env,
 
     mcmp_cost_fn = general.create_cost_fn(mdp_graph, False)
 
-    last_mcmp_cost = None
     reses = []
     vals = []
     mincost_maxprob = None
@@ -204,24 +203,23 @@ def run_mcmp_and_eval_gubs(env,
             break
 
         print(f"running for param val p_max={p}:")
-        mincost, model_cost, timed_out = mcmp.mcmp(obs,
-                                                   S_i,
-                                                   variable_map,
-                                                   in_flow,
-                                                   out_flow,
-                                                   p,
-                                                   mcmp_cost_fn,
-                                                   env,
-                                                   mdp_graph,
-                                                   start=start,
-                                                   log_solver=False)
+        mincost, _, timed_out = mcmp.mcmp(obs,
+                                          S_i,
+                                          variable_map,
+                                          in_flow,
+                                          out_flow,
+                                          p,
+                                          mcmp_cost_fn,
+                                          env,
+                                          mdp_graph,
+                                          start=start)
 
         if mincost_maxprob is None:
             mincost_maxprob = mincost
 
         var_map = deepcopy(variable_map)
         pi_func = mcmp.create_pi_func_prob(env, var_map, in_flow, out_flow,
-                                           obs, A, p)
+                                           obs)
 
         if has_time_limit and timed_out:
             print(
@@ -265,3 +263,100 @@ def run_mcmp_and_eval_gubs(env,
     vals = vals[::-1]
 
     return vals, ps, mincost_maxprob
+
+
+def run_alpha_mcmp_and_eval_gubs(env,
+                                 obs,
+                                 alphas,
+                                 S,
+                                 A,
+                                 V_i,
+                                 succ_states,
+                                 lamb,
+                                 k_g,
+                                 epsilon,
+                                 mdp_graph,
+                                 p_max=None,
+                                 time_limit=None,
+                                 batch_size=5):
+
+    has_time_limit = bool(time_limit)
+    start = time.perf_counter()
+
+    # Initialize variables
+    variable_map, in_flow, out_flow = mcmp.get_lp_data(env, S, A, mdp_graph)
+
+    S_i = {s: i for i, s in enumerate(S)}
+    if p_max is None:
+        p_max, model_prob = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
+                                            mdp_graph)
+
+    mcmp_cost_fn = general.create_cost_fn(mdp_graph, False)
+
+    reses = []
+    vals = []
+    for alpha in alphas:
+        elapsed = time.perf_counter() - start
+        print(f"  elapsed: {elapsed}, time limit: {time_limit}")
+        if has_time_limit and elapsed > time_limit:
+            print(
+                f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
+            break
+
+        print(f"running for param val alpha={alpha}:")
+        mincost, _, timed_out = mcmp.alpha_mcmp(obs,
+                                                S_i,
+                                                variable_map,
+                                                in_flow,
+                                                out_flow,
+                                                alpha,
+                                                p_max,
+                                                mcmp_cost_fn,
+                                                env,
+                                                mdp_graph,
+                                                start=start)
+
+        var_map = deepcopy(variable_map)
+        pi_func = mcmp.create_pi_func_prob(env, var_map, in_flow, out_flow,
+                                           obs)
+
+        if has_time_limit and timed_out:
+            print(
+                f"  elapsed time of {elapsed} exceeded limit of {time_limit} during value iteration"
+            )
+            continue
+
+        reses.append((mincost, pi_func, alpha * p_max))
+        print("Value at initial state:", mincost)
+        print("Probability to goal at initial state:", alpha * p_max)
+
+        action_probs = {a: pi_func(obs, a) for a in A}
+        print("Action probabilities at initial state:",
+              {a: prob
+               for a, prob in action_probs.items() if prob > 0})
+        print()
+
+        actual_pmax = alpha * p_max
+        # eval policy under eGUBS
+        param_cost_fn = general.create_cost_fn(mdp_graph, False, actual_pmax)
+        v = gubs.eval_policy(obs,
+                             succ_states,
+                             pi_func,
+                             param_cost_fn,
+                             actual_pmax,
+                             lamb,
+                             k_g,
+                             epsilon,
+                             mdp_graph,
+                             A,
+                             env,
+                             V_i=V_i,
+                             prob_policy=True)
+
+        vals.append(v)
+        print(
+            f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {alpha}:",
+            v)
+        print()
+
+    return vals, alphas
