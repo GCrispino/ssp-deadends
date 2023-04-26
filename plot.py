@@ -27,7 +27,13 @@ with open(data_file_path) as f:
 
     mcmp_p_vals = try_key(data, 'mcmp_p_vals')
     mcmp_vals = try_key(data, 'mcmp_result_vals')
+    mcmp_costs = try_key(data, 'mcmp_costs')
 
+    alpha_vals = try_key(data, 'alpha_vals')
+    alpha_mcmp_vals = try_key(data, 'alpha_mcmp_result_vals')
+    alpha_mcmp_costs = try_key(data, 'alpha_mcmp_costs')
+
+    p_max = try_key(data, 'p_max')
     v_gubs = try_key(data, 'v_gubs')
 
     plot.plot_data(
@@ -37,6 +43,11 @@ with open(data_file_path) as f:
         discounted_vals,
         mcmp_p_vals,
         mcmp_vals,
+        mcmp_costs,
+        alpha_vals,
+        alpha_mcmp_vals,
+        alpha_mcmp_costs,
+        p_max,
         v_gubs,
     )
 

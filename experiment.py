@@ -97,7 +97,7 @@ time_limit = None if args.limit_time is False else elapsed_gubs
 print("Elapsed time to compute optimal policy for eGUBS:", elapsed_gubs)
 
 # Compute MCMP
-mcmp_vals, mcmp_p_vals, mincost_maxprob = run.run_mcmp_and_eval_gubs(
+mcmp_vals, mcmp_p_vals, mincost_maxprob, p_max, mcmp_costs = run.run_mcmp_and_eval_gubs(
     env,
     obs,
     argparsing.DEFAULT_INIT_PARAM_VALUE,
@@ -118,7 +118,7 @@ n_mcmp_vals = len(mcmp_vals)
 print("mcmp values used:", mcmp_p_vals[-n_mcmp_vals:])
 
 # Compute alphaMCMP
-alpha_mcmp_vals, alpha_vals = run.run_alpha_mcmp_and_eval_gubs(
+alpha_mcmp_vals, alpha_vals, alpha_mcmp_costs = run.run_alpha_mcmp_and_eval_gubs(
     env,
     obs,
     args.alpha_vals,
@@ -217,11 +217,18 @@ n_penalty_vals = len(penalty_vals)
 penalty_vals = np.array(penalty_vals)
 print("penalty values used:", penalty_param_vals[:n_penalty_vals])
 
-fig = plot.plot_data(
-    penalty_param_vals, penalty_vals,
-    discounted_param_vals, discounted_vals,
-    mcmp_p_vals, mcmp_vals,
-    alpha_vals, alpha_mcmp_vals,
+fig_criteria, fig_mcmp = plot.plot_data(
+    penalty_param_vals,
+    penalty_vals,
+    discounted_param_vals,
+    discounted_vals,
+    mcmp_p_vals,
+    mcmp_vals,
+    mcmp_costs,
+    alpha_vals,
+    alpha_mcmp_vals,
+    alpha_mcmp_costs,
+    p_max,
     v_gubs,
 )
 
@@ -236,7 +243,7 @@ if args.render_and_save:
     print(f"writing plot figure to {plot_file_path}")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
-    save_fig_page(fig, plot_file_path)
+    save_fig_page(fig_criteria, plot_file_path)
 
     # save output data in JSON format
     output_filename = str(datetime.time(datetime.now())) + '.json'
@@ -248,6 +255,11 @@ if args.render_and_save:
         'discounted_result_vals': list(discounted_vals),
         'mcmp_p_vals': list(mcmp_p_vals),
         'mcmp_result_vals': list(mcmp_vals),
+        'mcmp_costs': list(mcmp_costs),
+        'alpha_vals': list(alpha_vals),
+        'alpha_mcmp_result_vals': list(alpha_mcmp_vals),
+        'alpha_mcmp_costs': list(alpha_mcmp_costs),
+        'p_max': p_max,
         'v_gubs': v_gubs,
     }
     output_file_path = utils.output(output_filename,

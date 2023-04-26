@@ -1,10 +1,19 @@
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 def plot_data(
-    penalty_param_vals, penalty_vals,
-    discounted_param_vals, discounted_vals,
-    mcmp_p_vals, mcmp_vals,
-    alpha_vals, alpha_mcmp_vals,
+    penalty_param_vals,
+    penalty_vals,
+    discounted_param_vals,
+    discounted_vals,
+    mcmp_p_vals,
+    mcmp_vals,
+    mcmp_costs,
+    alpha_vals,
+    alpha_mcmp_vals,
+    alpha_mcmp_costs,
+    p_max,
     v_gubs,
 ):
     n_penalty_vals = len(penalty_vals)
@@ -43,10 +52,10 @@ def plot_data(
     ax4 = ax.twiny()
     ax4.spines['top'].set_position(("axes", 1.30))
     pl_alpha_mcmp, = ax4.plot(alpha_vals[-n_alpha_mcmp_vals:],
-                            alpha_mcmp_vals,
-                            color="tab:brown",
-                            label=r"$\alpha$-MCMP",
-                            marker="o")
+                              alpha_mcmp_vals,
+                              color="tab:brown",
+                              label=r"$\alpha$-MCMP",
+                              marker="o")
     ax4.set_xlabel(r"$\alpha$")
     ax4.set_ylabel(r"Policy evaluation according to eGUBS at $s_0$")
 
@@ -63,4 +72,20 @@ def plot_data(
     fig.legend()
     plt.subplots_adjust(top=0.75)
 
-    return fig
+    fig2, ax = plt.subplots()
+    ax.set_title(r"MCMP and $\alpha$-MCMP")
+
+    ax.plot(np.array(alpha_vals) * p_max,
+             alpha_mcmp_costs,
+             label=r"$\alpha$-MCMP",
+             marker="o")
+
+    ax.plot(mcmp_p_vals,
+             mcmp_costs,
+             label="MCMP",
+             marker="x")
+    ax.set_xlabel(r"$P^{\pi}_G(s_0)$")
+    ax.set_ylabel(r"$C^{\pi}_{MCMP}(s_0)$")
+    fig2.legend()
+
+    return fig, fig2

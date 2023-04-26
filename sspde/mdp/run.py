@@ -178,10 +178,9 @@ def run_mcmp_and_eval_gubs(env,
     variable_map, in_flow, out_flow = mcmp.get_lp_data(env, S, A, mdp_graph)
 
     S_i = {s: i for i, s in enumerate(S)}
+    p_max, _ = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
+                                        mdp_graph)
     if p_maxs is None:
-        p_max, model_prob = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
-                                            mdp_graph)
-
         # TODO -> put time check here and early return if time is up
 
         n_vals = batch_size
@@ -193,6 +192,7 @@ def run_mcmp_and_eval_gubs(env,
 
     reses = []
     vals = []
+    mcmp_costs = []
     mincost_maxprob = None
     for p in reversed(ps):
         elapsed = time.perf_counter() - start
@@ -228,6 +228,7 @@ def run_mcmp_and_eval_gubs(env,
             continue
 
         reses.append((mincost, pi_func, p))
+        mcmp_costs.append(mincost)
         print("Value at initial state:", mincost)
         print("Probability to goal at initial state:", p)
 
@@ -261,8 +262,9 @@ def run_mcmp_and_eval_gubs(env,
 
     reses = reses[::-1]
     vals = vals[::-1]
+    mcmp_costs = mcmp_costs[::-1]
 
-    return vals, ps, mincost_maxprob
+    return vals, ps, mincost_maxprob, p_max, mcmp_costs
 
 
 def run_alpha_mcmp_and_eval_gubs(env,
@@ -295,6 +297,7 @@ def run_alpha_mcmp_and_eval_gubs(env,
 
     reses = []
     vals = []
+    mcmp_costs = []
     for alpha in alphas:
         elapsed = time.perf_counter() - start
         print(f"  elapsed: {elapsed}, time limit: {time_limit}")
@@ -327,6 +330,7 @@ def run_alpha_mcmp_and_eval_gubs(env,
             continue
 
         reses.append((mincost, pi_func, alpha * p_max))
+        mcmp_costs.append(mincost)
         print("Value at initial state:", mincost)
         print("Probability to goal at initial state:", alpha * p_max)
 
@@ -359,4 +363,4 @@ def run_alpha_mcmp_and_eval_gubs(env,
             v)
         print()
 
-    return vals, alphas
+    return vals, alphas, mcmp_costs
