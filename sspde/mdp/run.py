@@ -178,8 +178,7 @@ def run_mcmp_and_eval_gubs(env,
     variable_map, in_flow, out_flow = mcmp.get_lp_data(env, S, A, mdp_graph)
 
     S_i = {s: i for i, s in enumerate(S)}
-    p_max, _ = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env,
-                                        mdp_graph)
+    p_max, _ = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env, mdp_graph)
     if p_maxs is None:
         # TODO -> put time check here and early return if time is up
 
@@ -364,3 +363,58 @@ def run_alpha_mcmp_and_eval_gubs(env,
         print()
 
     return vals, alphas, mcmp_costs
+
+
+def run_egubs_for_alphas(obs,
+                         alphas,
+                         S,
+                         A,
+                         V_i,
+                         succ_states,
+                         goal,
+                         lamb,
+                         epsilon,
+                         mdp_graph,
+                         time_limit=None):
+
+    has_time_limit = bool(time_limit)
+    start = time.perf_counter()
+
+    vals = []
+    probs = []
+
+    # compute eGUBS for all alphas
+    for alpha in alphas:
+        elapsed = time.perf_counter() - start
+        print(f"  elapsed: {elapsed}, time limit: {time_limit}")
+        if has_time_limit and elapsed > time_limit:
+            print(
+                f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
+            break
+
+        k_g = alpha / (1 - alpha)
+        print(f"running for param val alpha={alpha} and k_g={k_g}:")
+        V_gubs, _, P_gubs, pi_gubs, _ = gubs.rs_and_egubs_vi(
+            obs, S, A, succ_states, V_i, goal, k_g, lamb, epsilon, general.h_1,
+            mdp_graph)
+
+        v_gubs = V_gubs[V_i[obs], 0]
+        p_gubs = P_gubs[V_i[obs], 0]
+        a_opt_gubs = pi_gubs(obs, 0)
+
+        vals.append(v_gubs)
+        probs.append(p_gubs)
+
+        print("Value at initial state:", v_gubs)
+        print("Probability to goal at initial state:", p_gubs)
+        print("Best action at initial state:", a_opt_gubs)
+        print()
+
+        # eval policy under eGUBS
+
+        print(
+            f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {alpha}:",
+            v_gubs)
+        print()
+
+    return vals, alphas, probs
