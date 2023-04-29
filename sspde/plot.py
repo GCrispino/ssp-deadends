@@ -13,6 +13,9 @@ def plot_data(
     alpha_vals,
     alpha_mcmp_vals,
     alpha_mcmp_costs,
+    egubs_alpha_vals,
+    egubs_alpha_result_vals,
+    egubs_alpha_result_probs,
     p_max,
     v_gubs,
 ):
@@ -73,19 +76,16 @@ def plot_data(
     plt.subplots_adjust(top=0.75)
 
     fig2, ax = plt.subplots()
-    ax.set_title(r"MCMP and $\alpha$-MCMP")
+    ax.set_title(r"$\alpha$-MCMP and eGUBS")
 
-    ax.plot(np.array(alpha_vals) * p_max,
-             alpha_mcmp_costs,
-             label=r"$\alpha$-MCMP",
-             marker="o")
+    ax.plot(alpha_vals,
+            np.array(alpha_vals) * p_max,
+            label=r"$\alpha$-MCMP",
+            marker="o")
 
-    ax.plot(mcmp_p_vals,
-             mcmp_costs,
-             label="MCMP",
-             marker="x")
-    ax.set_xlabel(r"$P^{\pi}_G(s_0)$")
-    ax.set_ylabel(r"$C^{\pi}_{MCMP}(s_0)$")
+    ax.plot(egubs_alpha_vals, egubs_alpha_result_probs, label="eGUBS", marker="x")
+    ax.set_xlabel(r"$\alpha$")
+    ax.set_ylabel(r"$P^{\pi}_G(s_0)$")
     fig2.legend()
 
     return fig, fig2

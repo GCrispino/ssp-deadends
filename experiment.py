@@ -227,6 +227,9 @@ fig_criteria, fig_mcmp = plot.plot_data(
     alpha_vals,
     alpha_mcmp_vals,
     alpha_mcmp_costs,
+    egubs_alpha_vals,
+    egubs_alpha_result_vals,
+    egubs_alpha_probs,
     p_max,
     v_gubs,
 )
