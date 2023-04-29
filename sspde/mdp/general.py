@@ -1,12 +1,13 @@
 import math
 import numpy as np
 
-from pddlgym.core import get_successor_states, InvalidAction
 from pddlgym.inference import check_goal
 
 import sspde.pddl as pddl
 import sspde.rendering as rendering
 
+def h_1(s):
+    return 1
 
 def build_mdp_graph(s, A, env, problem_index, penalty=False):
     problem = env.problems[problem_index]

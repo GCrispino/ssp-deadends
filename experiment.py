@@ -71,19 +71,13 @@ k_g = args.k_g
 general_succ_states = get_succ_states("discounted", A, mdp_graph)
 penalty_succ_states = get_succ_states("penalty", A, mdp_graph)
 
-
-def h_1(s):
-    return 1
-
-
 # compute eGUBS optimal policy
-# TODO -> use eGUBS-AO*
 # begin time
 start = time.perf_counter()
 
 V_gubs, V_rs_C, P_gubs, pi_gubs, C_maxs = gubs.rs_and_egubs_vi(
-    obs, S, A, general_succ_states, V_i, goal, k_g, lamb, args.epsilon, h_1,
-    mdp_graph)
+    obs, S, A, general_succ_states, V_i, goal, k_g, lamb, args.epsilon,
+    general.h_1, mdp_graph)
 v_gubs = V_gubs[V_i[obs], 0]
 p_gubs = P_gubs[V_i[obs], 0]
 # a_opt_gubs = pi_gubs[V_i[obs], 0]
