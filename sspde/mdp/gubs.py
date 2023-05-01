@@ -33,7 +33,8 @@ def eval_policy(s0,
     print("Prob to goal of rs policy", P_rs[V_i[s0]])
     if prob_policy:
         # check if probability to goal of computed policy is 'close enough' to p_max
-        assert np.abs(P_rs[V_i[s0]] - p_max) < (epsilon ** 0.5)
+        diff = np.abs(P_rs[V_i[s0]] - p_max)
+        assert diff < (epsilon ** 0.5), f"difference in p_max is {diff}"
 
     return V_rs[V_i[s0]] + k_g * p_max
 
