@@ -238,4 +238,11 @@ def parse_plot_args():
                         dest='data_file',
                         help="Generated data file to generate chart from")
 
+    parser.add_argument('--log_scale_x_alpha',
+                        dest='log_scale_x_alpha',
+                        default=False,
+                        action="store_true",
+                        help="Whether to use log scale in x axis when plotting values of alpha.")
+
+
     return parser.parse_args()

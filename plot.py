@@ -56,6 +56,7 @@ with open(data_file_path) as f:
         egubs_alpha_result_probs_by_lamb,
         p_max,
         v_gubs,
+        log_alpha=args.log_scale_x_alpha,
     )
 
     plt.show()

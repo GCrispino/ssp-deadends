@@ -18,6 +18,7 @@ def plot_data(
     egubs_alpha_result_probs_by_lamb,
     p_max,
     v_gubs,
+    log_alpha=False,
 ):
     n_penalty_vals = len(penalty_vals)
     n_discounted_vals = len(discounted_vals)
@@ -78,8 +79,12 @@ def plot_data(
     fig2, ax = plt.subplots()
     ax.set_title(r"$\alpha$-MCMP and eGUBS")
 
+    probs = np.array(alpha_vals) * p_max
+    if log_alpha:
+        alpha_vals = np.log10(alpha_vals)
+        egubs_alpha_vals = np.log10(egubs_alpha_vals)
     ax.plot(alpha_vals,
-            np.array(alpha_vals) * p_max,
+            probs,
             label=r"$\alpha$-MCMP",
             marker="o")
 
