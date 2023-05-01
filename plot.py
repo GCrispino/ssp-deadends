@@ -34,8 +34,8 @@ with open(data_file_path) as f:
     alpha_mcmp_costs = try_key(data, 'alpha_mcmp_costs')
 
     egubs_alpha_vals = try_key(data, 'egubs_alpha_vals')
-    egubs_alpha_result_vals = try_key(data, 'egubs_alpha_result_vals')
-    egubs_alpha_result_probs = try_key(data, 'egubs_alpha_result_probs')
+    egubs_alpha_result_vals_by_lamb = try_key(data, 'egubs_alpha_result_vals_by_lamb')
+    egubs_alpha_result_probs_by_lamb = try_key(data, 'egubs_alpha_result_probs_by_lamb')
 
     p_max = try_key(data, 'p_max')
     v_gubs = try_key(data, 'v_gubs')
@@ -52,8 +52,8 @@ with open(data_file_path) as f:
         alpha_mcmp_vals,
         alpha_mcmp_costs,
         egubs_alpha_vals,
-        egubs_alpha_result_vals,
-        egubs_alpha_result_probs,
+        egubs_alpha_result_vals_by_lamb,
+        egubs_alpha_result_probs_by_lamb,
         p_max,
         v_gubs,
     )

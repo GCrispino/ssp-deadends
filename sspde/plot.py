@@ -14,8 +14,8 @@ def plot_data(
     alpha_mcmp_vals,
     alpha_mcmp_costs,
     egubs_alpha_vals,
-    egubs_alpha_result_vals,
-    egubs_alpha_result_probs,
+    egubs_alpha_result_vals_by_lamb,
+    egubs_alpha_result_probs_by_lamb,
     p_max,
     v_gubs,
 ):
@@ -83,7 +83,9 @@ def plot_data(
             label=r"$\alpha$-MCMP",
             marker="o")
 
-    ax.plot(egubs_alpha_vals, egubs_alpha_result_probs, label="eGUBS", marker="x")
+    for lamb, egubs_alpha_result_probs in egubs_alpha_result_probs_by_lamb.items():
+        label = r"eGUBS - $\lambda =" + str(lamb) + "$"
+        ax.plot(egubs_alpha_vals, egubs_alpha_result_probs, label=label, marker="x")
     ax.set_xlabel(r"$\alpha$")
     ax.set_ylabel(r"$P^{\pi}_G(s_0)$")
     fig2.legend()

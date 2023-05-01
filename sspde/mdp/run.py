@@ -373,6 +373,7 @@ def run_egubs_for_alphas(obs,
                          succ_states,
                          goal,
                          lamb,
+                         lamb_vals,
                          epsilon,
                          mdp_graph,
                          time_limit=None):
@@ -380,41 +381,49 @@ def run_egubs_for_alphas(obs,
     has_time_limit = bool(time_limit)
     start = time.perf_counter()
 
-    vals = []
-    probs = []
 
+    lamb_vals = lamb_vals if lamb_vals is not None else [lamb]
     # compute eGUBS for all alphas
-    for alpha in alphas:
-        elapsed = time.perf_counter() - start
-        print(f"  elapsed: {elapsed}, time limit: {time_limit}")
-        if has_time_limit and elapsed > time_limit:
+    vals_by_lamb = {}
+    probs_by_lamb = {}
+    for lamb in lamb_vals:
+        vals = []
+        probs = []
+        for alpha in alphas:
+            elapsed = time.perf_counter() - start
+            print(f"  elapsed: {elapsed}, time limit: {time_limit}")
+            if has_time_limit and elapsed > time_limit:
+                print(
+                    f"  elapsed time of {elapsed} exceeded limit of {time_limit}"
+                )
+                break
+
+            k_g = alpha / (1 - alpha)
+            print(f"running for param val alpha={alpha}, k_g={k_g} and lambda={lamb}:")
+            V_gubs, _, P_gubs, pi_gubs, _ = gubs.rs_and_egubs_vi(
+                obs, S, A, succ_states, V_i, goal, k_g, lamb, epsilon,
+                general.h_1, mdp_graph)
+
+            v_gubs = V_gubs[V_i[obs], 0]
+            p_gubs = P_gubs[V_i[obs], 0]
+            a_opt_gubs = pi_gubs(obs, 0)
+
+            vals.append(v_gubs)
+            probs.append(p_gubs)
+
+            print("Value at initial state:", v_gubs)
+            print("Probability to goal at initial state:", p_gubs)
+            print("Best action at initial state:", a_opt_gubs)
+            print()
+
+            # eval policy under eGUBS
+
             print(
-                f"  elapsed time of {elapsed} exceeded limit of {time_limit}")
-            break
+                f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {alpha}:",
+                v_gubs)
+            print()
 
-        k_g = alpha / (1 - alpha)
-        print(f"running for param val alpha={alpha} and k_g={k_g}:")
-        V_gubs, _, P_gubs, pi_gubs, _ = gubs.rs_and_egubs_vi(
-            obs, S, A, succ_states, V_i, goal, k_g, lamb, epsilon, general.h_1,
-            mdp_graph)
+        vals_by_lamb[lamb] = list(vals)
+        probs_by_lamb[lamb] = list(probs)
 
-        v_gubs = V_gubs[V_i[obs], 0]
-        p_gubs = P_gubs[V_i[obs], 0]
-        a_opt_gubs = pi_gubs(obs, 0)
-
-        vals.append(v_gubs)
-        probs.append(p_gubs)
-
-        print("Value at initial state:", v_gubs)
-        print("Probability to goal at initial state:", p_gubs)
-        print("Best action at initial state:", a_opt_gubs)
-        print()
-
-        # eval policy under eGUBS
-
-        print(
-            f"Evaluated value of the optimal policy at s0 under the eGUBS criterion with param val = {alpha}:",
-            v_gubs)
-        print()
-
-    return vals, alphas, probs
+    return vals_by_lamb, alphas, probs_by_lamb

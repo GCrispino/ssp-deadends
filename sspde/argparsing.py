@@ -9,6 +9,7 @@ DEFAULT_PENALTY = 10
 DEFAULT_PENALTY_VALS = []
 DEFAULT_PMAX_VALS = None
 DEFAULT_ALPHA_VALS = None
+DEFAULT_LAMBDA_VALS = None
 DEFAULT_INIT_PARAM_VALUE = 0.01
 DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
@@ -120,13 +121,24 @@ def parse_args():
         help=
         "Specific p_max values to run experiments on MCMP for (default: %s)" %
         str(DEFAULT_PMAX_VALS))
-    parser.add_argument('--alpha_vals',
-                        dest='alpha_vals',
-                        type=float,
-                        nargs="*",
-                        default=DEFAULT_ALPHA_VALS,
-                        help="Specific alpha values to run experiments on alphaMCMP for (default: %s)" %
-                        str(DEFAULT_ALPHA_VALS))
+    parser.add_argument(
+        '--alpha_vals',
+        dest='alpha_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_ALPHA_VALS,
+        help=
+        "Specific alpha values to run experiments on alphaMCMP for (default: %s)"
+        % str(DEFAULT_ALPHA_VALS))
+    parser.add_argument(
+        '--lambda_vals',
+        dest='lamb_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_LAMBDA_VALS,
+        help=
+        "Specific lambda values to run for eGUBS when running experiments by alpha values (default: %s)"
+        % str(DEFAULT_LAMBDA_VALS))
     parser.add_argument(
         '--batch',
         dest='batch',
