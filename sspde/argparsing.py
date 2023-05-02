@@ -20,6 +20,8 @@ DEFAULT_LAMBDA = -0.1
 DEFAULT_KG = 1
 DEFAULT_SIMULATE = False
 DEFAULT_RENDER_AND_SAVE = False
+DEFAULT_NOT_RUN_ALPHA_EXPR = False
+DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR = False
 DEFAULT_PRINT_SIM_HISTORY = False
 DEFAULT_PLOT_STATS = False
 DEFAULT_OUTPUT_DIR = "./output"
@@ -226,6 +228,24 @@ def parse_args():
         help=
         "Defines whether or not to run a series of episodes with both a random policy and the policy returned by the algorithm and plot stats about these runs (default: %s)"
         % DEFAULT_PLOT_STATS)
+
+    parser.add_argument(
+        '--no_run_alpha_experiments',
+        dest='no_run_alpha_expr',
+        action="store_true",
+        default=DEFAULT_NOT_RUN_ALPHA_EXPR,
+        help=
+        "Defines whether or not to run experiments based on values of alpha (default: %s)"
+        % DEFAULT_NOT_RUN_ALPHA_EXPR)
+
+    parser.add_argument(
+        '--no_run_gubs_comparison_experiments',
+        dest='no_run_gubs_comparison_expr',
+        action="store_true",
+        default=DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR,
+        help=
+        "Defines whether or not to run experiments to compare different criteria to eGUBS (default: %s)"
+        % DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR)
 
     return parser.parse_args()
 

@@ -3,8 +3,9 @@ import time
 from copy import deepcopy
 
 import numpy as np
-import pulp
 
+import sspde.argparsing as argparsing
+import sspde.experiments.output as output
 import sspde.mdp.general as general
 import sspde.mdp.gubs as gubs
 import sspde.mdp.mcmp as mcmp
@@ -160,6 +161,10 @@ def run_mcmp_and_eval_gubs(env,
                            obs,
                            init_pval,
                            S,
+                           S_i,
+                           variable_map,
+                           in_flow,
+                           out_flow,
                            A,
                            V_i,
                            succ_states,
@@ -167,6 +172,7 @@ def run_mcmp_and_eval_gubs(env,
                            k_g,
                            epsilon,
                            mdp_graph,
+                           p_max,
                            p_maxs=None,
                            time_limit=None,
                            batch_size=5):
@@ -177,13 +183,11 @@ def run_mcmp_and_eval_gubs(env,
     # Initialize variables
     variable_map, in_flow, out_flow = mcmp.get_lp_data(env, S, A, mdp_graph)
 
-    S_i = {s: i for i, s in enumerate(S)}
-    p_max, _ = mcmp.maxprob_lp(obs, S_i, in_flow, out_flow, env, mdp_graph)
     if p_maxs is None:
         # TODO -> put time check here and early return if time is up
 
         n_vals = batch_size
-        ps = np.linspace(init_pval, p_max, n_vals)
+        ps = list(np.linspace(init_pval, p_max, n_vals))
     else:
         ps = p_maxs
 
@@ -381,7 +385,6 @@ def run_egubs_for_alphas(obs,
     has_time_limit = bool(time_limit)
     start = time.perf_counter()
 
-
     lamb_vals = lamb_vals if lamb_vals is not None else [lamb]
     # compute eGUBS for all alphas
     vals_by_lamb = {}
@@ -399,7 +402,9 @@ def run_egubs_for_alphas(obs,
                 break
 
             k_g = alpha / (1 - alpha)
-            print(f"running for param val alpha={alpha}, k_g={k_g} and lambda={lamb}:")
+            print(
+                f"running for param val alpha={alpha}, k_g={k_g} and lambda={lamb}:"
+            )
             V_gubs, _, P_gubs, pi_gubs, _ = gubs.rs_and_egubs_vi(
                 obs, S, A, succ_states, V_i, goal, k_g, lamb, epsilon,
                 general.h_1, mdp_graph)
@@ -427,3 +432,173 @@ def run_egubs_for_alphas(obs,
         probs_by_lamb[lamb] = list(probs)
 
     return vals_by_lamb, alphas, probs_by_lamb
+
+
+def run_experiments_eval_gubs(env, obs, S, S_i, no_penalty_S, variable_map, in_flow,
+                              out_flow, A, general_succ_states, V_i,
+                              no_penalty_V_i, goal, k_g, lamb, epsilon,
+                              penalty, penalty_vals, gamma_vals, p_max,
+                              pmax_vals, mdp_graph, no_penalty_mdp_graph,
+                              time_limit, batch_size, compare_policies):
+    # compute eGUBS optimal policy
+    # begin time
+    start = time.perf_counter()
+
+    V_gubs, V_rs_C, P_gubs, pi_gubs, C_maxs = gubs.rs_and_egubs_vi(
+        obs, S, A, general_succ_states, V_i, goal, k_g, lamb, epsilon,
+        general.h_1, mdp_graph)
+    v_gubs = V_gubs[V_i[obs], 0]
+    p_gubs = P_gubs[V_i[obs], 0]
+    a_opt_gubs = pi_gubs(obs, 0)
+
+    stop = time.perf_counter()
+
+    # get elapsed
+    elapsed_gubs = stop - start
+    time_limit = None if time_limit is False else elapsed_gubs
+    print("Elapsed time to compute optimal policy for eGUBS:", elapsed_gubs)
+
+    # Compute MCMP
+    mcmp_vals, mcmp_p_vals, mincost_maxprob, p_max, mcmp_costs = run_mcmp_and_eval_gubs(
+        env,
+        obs,
+        argparsing.DEFAULT_INIT_PARAM_VALUE,
+        no_penalty_S,
+        S_i,
+        variable_map,
+        in_flow,
+        out_flow,
+        A,
+        no_penalty_V_i,
+        general_succ_states,
+        lamb,
+        k_g,
+        epsilon,
+        no_penalty_mdp_graph,
+        p_max,
+        p_maxs=pmax_vals,
+        time_limit=time_limit,
+        batch_size=batch_size)
+
+    #mcmp_vals = np.array(mcmp_vals)
+    n_mcmp_vals = len(mcmp_vals)
+    print("mcmp values used:", mcmp_p_vals[-n_mcmp_vals:])
+
+    # TODO -> o valor do eGUBS pro primeiro valor de desconto dá 0, enquanto que rodando o main.py pro mesmo valor, retorna 0.13101062.
+    #         quando não usamos as variáveis "no_penalty" aqui, o mesmo valor é retornado, o que talvez indique que o outro script esteja errado porque __talvez__ usa as variáveis de penalidade mesmo quando está no desconto
+    #         ou o experiment.py ta errado
+    start = time.perf_counter()
+    discounted_succ_states = vi.get_succ_states("discounted", A, mdp_graph)
+
+    if gamma_vals:
+        discounted_vals = np.array(gamma_vals)
+    else:
+        percentage_log_vals = 0.75
+        n_log_vals = math.floor(batch_size * percentage_log_vals)
+        n_linear_vals = batch_size - n_log_vals
+
+        discounted_vals = np.concatenate(
+            (np.linspace(argparsing.DEFAULT_INIT_PARAM_VALUE, 0.9,
+                         n_linear_vals + 1)[:-1],
+             (float(0.9)**np.logspace(0, -10, num=n_log_vals))))
+
+    discounted_vals, discounted_param_vals = run_vi_and_eval_gubs(
+        env,
+        obs,
+        goal,
+        "discounted",
+        discounted_vals,
+        no_penalty_S,
+        A,
+        no_penalty_V_i,
+        discounted_succ_states,
+        k_g,
+        lamb,
+        epsilon,
+        no_penalty_mdp_graph,
+        pi_gubs=pi_gubs,
+        C_maxs=C_maxs,
+        time_limit=time_limit,
+        compare_policies=compare_policies,
+        batch_size=batch_size)
+
+    n_discounted_vals = len(discounted_vals)
+    #discounted_vals = np.array(discounted_vals)
+    print("discount factor values used:",
+          discounted_param_vals[:n_discounted_vals])
+    discounted_param_vals = list(-np.log2(1 - discounted_param_vals))
+
+    if penalty != None:
+        max_penalty = penalty
+    else:
+        max_penalty = mincost_maxprob * 5
+
+    penalty_succ_states = vi.get_succ_states("penalty", A, mdp_graph)
+    if not penalty_vals:
+        penalty_vals = np.linspace(argparsing.DEFAULT_INIT_PARAM_VALUE,
+                                   max_penalty, batch_size)
+    penalty_vals = list(penalty_vals)
+
+    penalty_vals, penalty_param_vals = run_vi_and_eval_gubs(
+        env,
+        obs,
+        goal,
+        "penalty",
+        penalty_vals,
+        S,
+        A,
+        V_i,
+        penalty_succ_states,
+        k_g,
+        lamb,
+        epsilon,
+        mdp_graph,
+        pi_gubs=pi_gubs,
+        C_maxs=C_maxs,
+        time_limit=time_limit,
+        batch_size=batch_size,
+    )
+
+    n_penalty_vals = len(penalty_vals)
+    #penalty_vals = np.array(penalty_vals)
+    print("penalty values used:", penalty_param_vals[:n_penalty_vals])
+
+    return output.GUBSComparisonExprOutput(penalty_vals, penalty_param_vals,
+                                           discounted_vals,
+                                           discounted_param_vals, mcmp_vals,
+                                           mcmp_p_vals, mcmp_costs, p_max,
+                                           v_gubs)
+
+
+def run_experiments_for_alphas(env, obs, goal, alpha_vals, S, no_penalty_S, A,
+                               V_i, no_penalty_V_i, general_succ_states, lamb,
+                               lamb_vals, k_g, epsilon, mdp_graph,
+                               no_penalty_mdp_graph, batch_size):
+    # Compute alphaMCMP
+    alpha_mcmp_vals, alpha_vals, alpha_mcmp_costs = run_alpha_mcmp_and_eval_gubs(
+        env,
+        obs,
+        alpha_vals,
+        no_penalty_S,
+        A,
+        no_penalty_V_i,
+        general_succ_states,
+        lamb,
+        k_g,
+        epsilon,
+        no_penalty_mdp_graph,
+        batch_size=batch_size)
+
+    #alpha_mcmp_vals = np.array(alpha_mcmp_vals)
+    n_alpha_mcmp_vals = len(alpha_mcmp_vals)
+    print("alpha_mcmp values used:", alpha_mcmp_vals[-n_alpha_mcmp_vals:])
+
+    # Compute eGUBS for alphas
+    egubs_alpha_result_vals_by_lamb, egubs_alpha_vals, egubs_alpha_probs_by_lamb = run_egubs_for_alphas(
+        obs, alpha_vals, S, A, V_i, general_succ_states, goal, lamb, lamb_vals,
+        epsilon, mdp_graph)
+
+    return output.AlphaExprOutput(alpha_vals, list(alpha_mcmp_vals),
+                                  alpha_mcmp_costs, egubs_alpha_vals,
+                                  egubs_alpha_result_vals_by_lamb,
+                                  egubs_alpha_probs_by_lamb)
