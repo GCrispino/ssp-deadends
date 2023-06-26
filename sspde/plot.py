@@ -1,5 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
+
+
+def save_fig_page(fig, path):
+    pp = PdfPages(path)
+    fig.savefig(pp, format="pdf")
+    pp.close()
 
 
 def plot_data(
@@ -7,6 +14,7 @@ def plot_data(
     alpha_expr_vals,
     p_max,
     log_alpha=False,
+    output_file_path=None,
 ):
 
     fig, fig2 = None, None
@@ -73,7 +81,9 @@ def plot_data(
         ax.set_title(r"$\alpha$-MCMP and eGUBS")
 
         probs = np.array(alpha_vals) * p_max
+        x_label = r"$\alpha$"
         if log_alpha:
+            x_label = r"$\log_{10}\alpha$"
             alpha_vals = np.log10(alpha_vals)
             egubs_alpha_vals = np.log10(egubs_alpha_vals)
         ax.plot(alpha_vals, probs, label=r"$\alpha$-MCMP", marker="o")
@@ -85,8 +95,10 @@ def plot_data(
                     egubs_alpha_result_probs,
                     label=label,
                     marker="x")
-        ax.set_xlabel(r"$\alpha$")
+        ax.set_xlabel(x_label)
         ax.set_ylabel(r"$P^{\pi}_G(s_0)$")
         fig2.legend()
+        if output_file_path:
+            save_fig_page(fig2, output_file_path)
 
     return fig, fig2

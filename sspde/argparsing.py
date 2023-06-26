@@ -25,6 +25,7 @@ DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR = False
 DEFAULT_PRINT_SIM_HISTORY = False
 DEFAULT_PLOT_STATS = False
 DEFAULT_OUTPUT_DIR = "./output"
+DEFAULT_OUTPUT_FIG_FILE_PATH = None
 
 
 # Taken from https://github.com/espnet/espnet/blob/master/espnet2/utils/types.py#L51
@@ -257,6 +258,11 @@ def parse_plot_args():
     parser.add_argument('--data_file',
                         dest='data_file',
                         help="Generated data file to generate chart from")
+
+    parser.add_argument('--output_file',
+                        dest='output_file',
+                        default=DEFAULT_OUTPUT_FIG_FILE_PATH,
+                        help="File path to save fig to")
 
     parser.add_argument('--log_scale_x_alpha',
                         dest='log_scale_x_alpha',

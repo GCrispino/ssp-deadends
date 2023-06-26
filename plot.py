@@ -32,6 +32,7 @@ with open(data_file_path) as f:
         alpha_expr_vals,
         p_max,
         log_alpha=args.log_scale_x_alpha,
+        output_file_path=args.output_file,
     )
 
     plt.show()

@@ -15,16 +15,7 @@ import sspde.utils as utils
 
 from datetime import datetime
 
-from matplotlib.backends.backend_pdf import PdfPages
-
 from sspde.mdp.vi import get_succ_states
-
-
-def save_fig_page(fig, path):
-    pp = PdfPages(path)
-    fig.savefig(pp, format="pdf")
-    pp.close()
-
 
 #matplotlib.use('agg')
 
@@ -124,7 +115,7 @@ if args.render_and_save:
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     if fig_criteria is not None:
-        save_fig_page(fig_criteria, plot_file_path)
+        plot.save_fig_page(fig_criteria, plot_file_path)
 
     # save output data in JSON format
     output_filename = str(datetime.time(datetime.now())) + '.json'
