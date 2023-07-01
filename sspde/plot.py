@@ -77,7 +77,7 @@ def plot_data(
         egubs_alpha_vals = alpha_expr_vals.egubs_alpha_vals
         egubs_alpha_result_probs_by_lamb = alpha_expr_vals.egubs_alpha_result_probs_by_lamb
 
-        fig2, ax = plt.subplots()
+        fig2, ax = plt.subplots(figsize=(6.5, 4.5))
         ax.set_title(r"$\alpha$-MCMP and eGUBS")
 
         probs = np.array(alpha_vals) * p_max
@@ -97,7 +97,8 @@ def plot_data(
                     marker="x")
         ax.set_xlabel(x_label)
         ax.set_ylabel(r"$P^{\pi}_G(s_0)$")
-        fig2.legend()
+        ax.legend(bbox_to_anchor=(1.0, 0.7), loc='upper left')
+        fig2.tight_layout()
         if output_file_path:
             save_fig_page(fig2, output_file_path)
 
