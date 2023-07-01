@@ -6,6 +6,11 @@ import numpy as np
 from pddlgym.core import PDDLEnv
 from pddlgym.structs import State, TypedEntity
 
+def try_key(data, key):
+    if key not in data:
+        raise KeyError(f"key {key} not in data file!")
+    return data[key]
+
 
 def flatten(lst):
     return [x for l_i in lst for x in l_i]

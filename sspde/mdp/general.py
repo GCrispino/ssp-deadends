@@ -1,12 +1,13 @@
 import math
 import numpy as np
 
-from pddlgym.core import get_successor_states, InvalidAction
 from pddlgym.inference import check_goal
 
 import sspde.pddl as pddl
 import sspde.rendering as rendering
 
+def h_1(s):
+    return 1
 
 def build_mdp_graph(s, A, env, problem_index, penalty=False):
     problem = env.problems[problem_index]
@@ -99,6 +100,8 @@ def create_cost_fn(mdp_graph, has_penalty, penalty=None):
 
         if has_penalty:
             if a == pddl.quit_action:
+                # TODO -> shouldn't this use 'penalty'?
+                #       maybe have to check how policies with penalties are evaluated
                 return math.inf
 
         return 1

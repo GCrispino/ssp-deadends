@@ -5,6 +5,7 @@ import pulp
 import sspde.rendering as rendering
 from sspde.mdp.general import get_succs, Pr
 
+
 def get_variables(env, S, A):
     """
         creates a map of variables to use in the linear programming model
@@ -20,6 +21,7 @@ def get_variables(env, S, A):
             variable_map[(s, a)] = var
 
     return variable_map
+
 
 def get_in_flow(variable_map, mdp):
     ins = {}
@@ -63,6 +65,7 @@ def get_out_flow(variable_map, mdp):
         outs[s] = pulp.lpSum(out)
     return outs
 
+
 def get_lp_data(env, S, A, mdp):
     variable_map = get_variables(env, S, A)
     in_flow = get_in_flow(variable_map, mdp)
@@ -70,19 +73,24 @@ def get_lp_data(env, S, A, mdp):
 
     return variable_map, in_flow, out_flow
 
-def mcmp(s_0,
-         S_i,
-         variable_map,
-         in_flow,
-         out_flow,
-         p_max,
-         cost_fn,
-         env,
-         mdp,
-         log_solver=False,
-         start=None):
+
+def get_mcmp_model(name,
+                   s_0,
+                   S_i,
+                   variable_map,
+                   in_flow,
+                   out_flow,
+                   p_max,
+                   cost_fn,
+                   env,
+                   mdp,
+                   alpha=1,
+                   start=None):
+    if name not in ("mcmp", "alpha-mcmp"):
+        raise ValueError("mcmp type not supported")
+
     # Create the model
-    model_cost = pulp.LpProblem(name="mcmp", sense=pulp.LpMinimize)
+    model_cost = pulp.LpProblem(name=name, sense=pulp.LpMinimize)
 
     # Add the constraints to the models
     for s, s_obj in mdp.items():
@@ -102,12 +110,16 @@ def mcmp(s_0,
     model_cost += (out_flow[s_0] - in_flow[s_0] <= 1, f"flow_init_{s_0_id}")
 
     # get goal state
-    # TODO -> multiple goal staes might exist
     gs = [s for s, v in mdp.items() if v['goal']]
     in_flow_gs = pulp.lpSum([in_flow[g] for g in gs])
 
     # constraint for goal state
-    model_cost += (in_flow_gs == p_max, f"flow_goals")
+    if name == "mcmp":
+        # if vanilla mcmp, apply its goal constraint
+        model_cost += (in_flow_gs == p_max, f"flow_goals")
+    elif name == "alpha-mcmp":
+        # if alpha-mcmp, apply goal constraint with alpha
+        model_cost += (in_flow_gs >= alpha * p_max, f"flow_goals")
 
     # Add the objective function to the model
     obj_func = None
@@ -126,12 +138,73 @@ def mcmp(s_0,
 
     model_cost += obj_func
 
+    return model_cost
+
+
+def mcmp(s_0,
+         S_i,
+         variable_map,
+         in_flow,
+         out_flow,
+         p_max,
+         cost_fn,
+         env,
+         mdp,
+         log_solver=False,
+         start=None):
+
+    model_cost = get_mcmp_model(
+        "mcmp",
+        s_0,
+        S_i,
+        variable_map,
+        in_flow,
+        out_flow,
+        p_max,
+        cost_fn,
+        env,
+        mdp,
+        start=start,
+    )
+
     # Solve the problem
     model_cost.solve(pulp.PULP_CBC_CMD(msg=log_solver))
 
     return model_cost.objective.value(), model_cost, False
 
-    #print_model_status(model_cost)
+
+def alpha_mcmp(s_0,
+               S_i,
+               variable_map,
+               in_flow,
+               out_flow,
+               alpha,
+               p_max,
+               cost_fn,
+               env,
+               mdp,
+               log_solver=False,
+               start=None):
+
+    model_cost = get_mcmp_model(
+        "alpha-mcmp",
+        s_0,
+        S_i,
+        variable_map,
+        in_flow,
+        out_flow,
+        p_max,
+        cost_fn,
+        env,
+        mdp,
+        alpha=alpha,
+        start=start,
+    )
+
+    # Solve the problem
+    model_cost.solve(pulp.PULP_CBC_CMD(msg=log_solver))
+
+    return model_cost.objective.value(), model_cost, False
 
 
 def maxprob_lp(s_0, S_i, in_flow, out_flow, env, mdp):
@@ -186,7 +259,7 @@ def create_pi_func(variable_map, A):
     return pi_func
 
 
-def create_pi_func_prob(env, variable_map, in_flow, out_flow, s0, A, p_max):
+def create_pi_func_prob(env, variable_map, in_flow, out_flow, s0):
 
     def pi_func(s, a):
         if s not in out_flow:
@@ -201,7 +274,7 @@ def create_pi_func_prob(env, variable_map, in_flow, out_flow, s0, A, p_max):
         out_diff = out_val - in_val
         if s.literals != s0.literals:
             if out_diff < 0 and math.fabs(out_diff) > 1e-5:
-                # TODO - what to do when out(s) - in(s) < 0 ? 
+                # TODO - what to do when out(s) - in(s) < 0 ?
                 print(rendering.get_state_id(env, s))
                 print("  ", out_val, in_val, out_val - in_val)
                 assert False

@@ -8,6 +8,8 @@ DEFAULT_GAMMA_VALS = []
 DEFAULT_PENALTY = 10
 DEFAULT_PENALTY_VALS = []
 DEFAULT_PMAX_VALS = None
+DEFAULT_ALPHA_VALS = None
+DEFAULT_LAMBDA_VALS = None
 DEFAULT_INIT_PARAM_VALUE = 0.01
 DEFAULT_VI_MODE = "discounted"
 DEFAULT_BATCH = False
@@ -18,9 +20,12 @@ DEFAULT_LAMBDA = -0.1
 DEFAULT_KG = 1
 DEFAULT_SIMULATE = False
 DEFAULT_RENDER_AND_SAVE = False
+DEFAULT_NOT_RUN_ALPHA_EXPR = False
+DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR = False
 DEFAULT_PRINT_SIM_HISTORY = False
 DEFAULT_PLOT_STATS = False
 DEFAULT_OUTPUT_DIR = "./output"
+DEFAULT_OUTPUT_FIG_FILE_PATH = None
 
 
 # Taken from https://github.com/espnet/espnet/blob/master/espnet2/utils/types.py#L51
@@ -120,6 +125,24 @@ def parse_args():
         "Specific p_max values to run experiments on MCMP for (default: %s)" %
         str(DEFAULT_PMAX_VALS))
     parser.add_argument(
+        '--alpha_vals',
+        dest='alpha_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_ALPHA_VALS,
+        help=
+        "Specific alpha values to run experiments on alphaMCMP for (default: %s)"
+        % str(DEFAULT_ALPHA_VALS))
+    parser.add_argument(
+        '--lambda_vals',
+        dest='lamb_vals',
+        type=float,
+        nargs="*",
+        default=DEFAULT_LAMBDA_VALS,
+        help=
+        "Specific lambda values to run for eGUBS when running experiments by alpha values (default: %s)"
+        % str(DEFAULT_LAMBDA_VALS))
+    parser.add_argument(
         '--batch',
         dest='batch',
         default=DEFAULT_BATCH,
@@ -207,6 +230,24 @@ def parse_args():
         "Defines whether or not to run a series of episodes with both a random policy and the policy returned by the algorithm and plot stats about these runs (default: %s)"
         % DEFAULT_PLOT_STATS)
 
+    parser.add_argument(
+        '--no_run_alpha_experiments',
+        dest='no_run_alpha_expr',
+        action="store_true",
+        default=DEFAULT_NOT_RUN_ALPHA_EXPR,
+        help=
+        "Defines whether or not to run experiments based on values of alpha (default: %s)"
+        % DEFAULT_NOT_RUN_ALPHA_EXPR)
+
+    parser.add_argument(
+        '--no_run_gubs_comparison_experiments',
+        dest='no_run_gubs_comparison_expr',
+        action="store_true",
+        default=DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR,
+        help=
+        "Defines whether or not to run experiments to compare different criteria to eGUBS (default: %s)"
+        % DEFAULT_NOT_RUN_GUBS_COMPARISON_EXPR)
+
     return parser.parse_args()
 
 
@@ -217,5 +258,17 @@ def parse_plot_args():
     parser.add_argument('--data_file',
                         dest='data_file',
                         help="Generated data file to generate chart from")
+
+    parser.add_argument('--output_file',
+                        dest='output_file',
+                        default=DEFAULT_OUTPUT_FIG_FILE_PATH,
+                        help="File path to save fig to")
+
+    parser.add_argument('--log_scale_x_alpha',
+                        dest='log_scale_x_alpha',
+                        default=False,
+                        action="store_true",
+                        help="Whether to use log scale in x axis when plotting values of alpha.")
+
 
     return parser.parse_args()
