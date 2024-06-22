@@ -31,14 +31,22 @@ $ python experiment.py --env PDDLEnvTireworld-v0 --problem_index 0 --pmax_vals 0
 Running `$ python experiment.py --help` will print a description of each possible parameter that can be set:
 ```
 ❯ python experiment.py --help
-usage: experiment.py [-h] --env ENV [--problem_index PROBLEM_INDEX] [--algorithm {vi,mcmp}] [--epsilon EPSILON]
-                     [--vi_mode {discounted,penalty}] [--gamma GAMMA] [--gamma_vals [GAMMA_VALS ...]]
-                     [--penalty PENALTY] [--penalty_vals [PENALTY_VALS ...]] [--pmax_vals [PMAX_VALS ...]] [--batch]
-                     [--batch_size BATCH_SIZE] [--limit_time] [--compare_policies] [--lambda LAMB] [--k_g K_G]
-                     [--init_param_val INIT_PARAM_VAL] [--simulate] [--render_and_save] [--output_dir OUTPUT_DIR]
+usage: experiment.py [-h] --env ENV [--problem_index PROBLEM_INDEX]
+                     [--algorithm {vi,mcmp}] [--epsilon EPSILON]
+                     [--vi_mode {discounted,penalty}] [--gamma GAMMA]
+                     [--gamma_vals [GAMMA_VALS ...]] [--penalty PENALTY]
+                     [--penalty_vals [PENALTY_VALS ...]]
+                     [--pmax_vals [PMAX_VALS ...]] [--alpha_vals [ALPHA_VALS ...]]
+                     [--lambda_vals [LAMB_VALS ...]] [--batch]
+                     [--batch_size BATCH_SIZE] [--limit_time] [--compare_policies]
+                     [--lambda LAMB] [--k_g K_G] [--init_param_val INIT_PARAM_VAL]
+                     [--simulate] [--render_and_save] [--output_dir OUTPUT_DIR]
                      [--print_sim_history] [--plot_stats]
+                     [--no_run_alpha_experiments]
+                     [--no_run_gubs_comparison_experiments]
 
-Implementation of different algorithms for solving SSPs with deadends described as PDDLGym environments.
+Implementation of different algorithms for solving SSPs with deadends described as
+PDDLGym environments.
 
 options:
   -h, --help            show this help message and exit
@@ -52,31 +60,51 @@ options:
                         VI algorithm mode (default: discounted)
   --gamma GAMMA         Discount factor (default: 0.99)
   --gamma_vals [GAMMA_VALS ...]
-                        Specific discount factor values to run experiments for (default: [])
+                        Specific discount factor values to run experiments for
+                        (default: [])
   --penalty PENALTY     Penalty cost to quit when mode is 'penalty' (default: 10)
   --penalty_vals [PENALTY_VALS ...]
                         Specific penalty values to run experiments for (default: [])
   --pmax_vals [PMAX_VALS ...]
-                        Specific p_max values to run experiments on MCMP for (default: None)
-  --batch               Defines whether or not to solve for several parameters (default: False)
+                        Specific p_max values to run experiments on MCMP for
+                        (default: [1])
+  --alpha_vals [ALPHA_VALS ...]
+                        Specific alpha values to run experiments on alphaMCMP for
+                        (default: [0.999])
+  --lambda_vals [LAMB_VALS ...]
+                        Specific lambda values to run for eGUBS when running
+                        experiments by alpha values (default: None)
+  --batch               Defines whether or not to solve for several parameters
+                        (default: False)
   --batch_size BATCH_SIZE
                         Size of batch in batch mode (default: 20)
-  --limit_time          Defines whether or not to limit solving of alternate criteria by the time it takes to solve the
-                        problem for the eGUBS criterion (default: False)
-  --compare_policies    Defines whether or not to run policy comparison analysis (default: False)
+  --limit_time          Defines whether or not to limit solving of alternate
+                        criteria by the time it takes to solve the problem for the
+                        eGUBS criterion (default: False)
+  --compare_policies    Defines whether or not to run policy comparison analysis
+                        (default: False)
   --lambda LAMB         Risk factor (default: -0.1)
   --k_g K_G             Constant goal utility (default: -0.1)
   --init_param_val INIT_PARAM_VAL
-                        Initial value for param being varied when in batch mode (default: 0.01)
-  --simulate            Defines whether or not to run a simulation in the problem by applying the algorithm's resulting
-                        policy (default: False)
-  --render_and_save     Defines whether or not to render and save the received observations during execution to a file
-                        (default: False)
+                        Initial value for param being varied when in batch mode
+                        (default: 0.01)
+  --simulate            Defines whether or not to run a simulation in the problem by
+                        applying the algorithm's resulting policy (default: False)
+  --render_and_save     Defines whether or not to render and save the received
+                        observations during execution to a file (default: False)
   --output_dir OUTPUT_DIR
                         Simulation's output directory (default: ./output)
-  --print_sim_history   Defines whether or not to print chosen actions during simulation (default: False)
-  --plot_stats          Defines whether or not to run a series of episodes with both a random policy and the policy
-                        returned by the algorithm and plot stats about these runs (default: False)
+  --print_sim_history   Defines whether or not to print chosen actions during
+                        simulation (default: False)
+  --plot_stats          Defines whether or not to run a series of episodes with both
+                        a random policy and the policy returned by the algorithm and
+                        plot stats about these runs (default: False)
+  --no_run_alpha_experiments
+                        Defines whether or not to run experiments based on values of
+                        alpha (default: False)
+  --no_run_gubs_comparison_experiments
+                        Defines whether or not to run experiments to compare
+                        different criteria to eGUBS (default: False)
 ```
 
 NOTE: currently running solvers via the `main.py` is not working.
